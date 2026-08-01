@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { LayoutDashboard, FileText, Hammer, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import burritoCampo from "@/assets/burrito-campo.jpeg";
 
 export function Sidebar() {
   const [location] = useLocation();
@@ -11,7 +12,13 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="w-64 border-r bg-card flex-shrink-0 hidden md:flex flex-col">
+    <aside
+      className="w-64 border-r flex-shrink-0 hidden md:flex flex-col relative bg-cover bg-center"
+      style={{ backgroundImage: `url(${burritoCampo})` }}
+    >
+      {/* Velo claro para que el texto se lea sobre la foto */}
+      <div className="absolute inset-0 bg-card/80 backdrop-blur-[1px]" />
+      <div className="relative flex flex-col flex-1">
       <div className="p-6 border-b">
         <h1 className="text-2xl font-serif font-bold text-primary flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
@@ -50,6 +57,7 @@ export function Sidebar() {
 
       <div className="p-4 border-t text-xs text-muted-foreground text-center">
         BioCasa Studio v1.0
+      </div>
       </div>
     </aside>
   );
