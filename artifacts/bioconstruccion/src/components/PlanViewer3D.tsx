@@ -8,10 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Footprints, X } from 'lucide-react';
 
 const wallColors: Record<string, string> = {
-  bahareque: '#f5ebd8', // warm cream
-  tapia_pisada: '#c2925b', // thick rammed-earth ochre
-  adobe: '#b35a3b', // brick-earth
-  guadua_vista: '#d4c3ab', // bamboo green-tan
+  bahareque: '#dfc9a4', // revoque de tierra claro
+  tapia_pisada: '#b98a5a', // tapia pisada ocre
+  adobe: '#a5673f', // adobe tierra
+  guadua_vista: '#c9b48f', // guadua tan
 };
 
 const roofColors: Record<string, string> = {
@@ -34,7 +34,7 @@ function Wall({ position, args, color, hasWindow = false }: { position: [number,
     <group position={position}>
       <mesh castShadow receiveShadow>
         <boxGeometry args={args} />
-        <meshStandardMaterial color={color} roughness={0.9} />
+        <meshStandardMaterial color={color} roughness={1} />
       </mesh>
       {hasWindow && (
         <mesh position={[0, 0, 0]}>
@@ -80,8 +80,24 @@ function Room3D({ room, maxH1, wallSystem }: { room: Room, maxH1: number, wallSy
       {/* Floor slab */}
       <mesh position={[x, floorY, z]} receiveShadow>
         <boxGeometry args={[w, 0.1, l]} />
-        <meshStandardMaterial color="#8a837b" />
+        <meshStandardMaterial color="#9c8468" roughness={1} />
       </mesh>
+
+      {/* Sobrecimiento de piedra (base) — solo piso 1 */}
+      {!isFloor2 && (
+        <mesh position={[x, 0.15, z]} receiveShadow castShadow>
+          <boxGeometry args={[w + 0.08, 0.3, l + 0.08]} />
+          <meshStandardMaterial color="#857c6e" roughness={1} />
+        </mesh>
+      )}
+
+      {/* Columnas de guadua en las esquinas — solo piso 1 */}
+      {!isFloor2 && [[-1, -1], [-1, 1], [1, -1], [1, 1]].map(([sx, sz], i) => (
+        <mesh key={`col${i}`} castShadow position={[x + sx * (w / 2), h / 2 + 0.1, z + sz * (l / 2)]}>
+          <cylinderGeometry args={[0.08, 0.1, h + 0.3, 7]} />
+          <meshStandardMaterial color="#9aa25c" roughness={0.8} />
+        </mesh>
+      ))}
       
       {/* Walls */}
       {renderWalls(hBot, baseZ + hBot/2, cBot, false)}
