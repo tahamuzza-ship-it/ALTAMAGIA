@@ -194,6 +194,64 @@ function InfoBioconstruccion({ wallSystem, onClose }: { wallSystem: string, onCl
   );
 }
 
+// Terraza trasera: plataforma de madera con sillas de exterior
+function TerrazaTrasera({ x, z }: { x: number, z: number }) {
+  const W = 4.2, D = 3.0; // ancho y fondo de la plataforma
+  const planks = Math.round(W / 0.35);
+  const silla = (sx: number, sz: number, rotY: number) => (
+    <group position={[sx, 0.24, sz]} rotation={[0, rotY, 0]}>
+      {/* asiento */}
+      <mesh castShadow position={[0, 0.22, 0]}>
+        <boxGeometry args={[0.45, 0.06, 0.45]} />
+        <meshStandardMaterial color="#a5793f" roughness={0.9} />
+      </mesh>
+      {/* espaldar */}
+      <mesh castShadow position={[0, 0.5, -0.2]} rotation={[-0.15, 0, 0]}>
+        <boxGeometry args={[0.45, 0.55, 0.05]} />
+        <meshStandardMaterial color="#a5793f" roughness={0.9} />
+      </mesh>
+      {/* patas */}
+      {[[-0.18, -0.18], [0.18, -0.18], [-0.18, 0.18], [0.18, 0.18]].map(([px, pz], i) => (
+        <mesh key={i} position={[px, 0.09, pz]}>
+          <boxGeometry args={[0.05, 0.24, 0.05]} />
+          <meshStandardMaterial color="#8a6435" roughness={0.9} />
+        </mesh>
+      ))}
+    </group>
+  );
+  return (
+    <group position={[x, 0, z + D / 2 + 0.15]}>
+      {/* tablones de la plataforma */}
+      {Array.from({ length: planks }, (_, i) => (
+        <mesh key={i} castShadow receiveShadow position={[-W / 2 + (i + 0.5) * (W / planks), 0.12, 0]}>
+          <boxGeometry args={[W / planks - 0.03, 0.08, D]} />
+          <meshStandardMaterial color="#b08c5f" roughness={0.95} />
+        </mesh>
+      ))}
+      {/* base */}
+      <mesh position={[0, 0.05, 0]}>
+        <boxGeometry args={[W, 0.1, D]} />
+        <meshStandardMaterial color="#7a5230" roughness={1} />
+      </mesh>
+      {/* mesita */}
+      <group position={[0, 0.16, 0.2]}>
+        <mesh castShadow position={[0, 0.42, 0]}>
+          <cylinderGeometry args={[0.4, 0.4, 0.05, 12]} />
+          <meshStandardMaterial color="#a5793f" roughness={0.9} />
+        </mesh>
+        <mesh position={[0, 0.2, 0]}>
+          <cylinderGeometry args={[0.05, 0.07, 0.4, 8]} />
+          <meshStandardMaterial color="#8a6435" roughness={0.9} />
+        </mesh>
+      </group>
+      {/* sillas mirando a la mesita */}
+      {silla(-0.85, 0.2, Math.PI / 2)}
+      {silla(0.85, 0.2, -Math.PI / 2)}
+      {silla(0, 1.05, Math.PI)}
+    </group>
+  );
+}
+
 // Entrada principal: escalón, portón destacado, techito sobre postes de guadua y letrero
 function EntradaPrincipal({ x, z }: { x: number, z: number }) {
   return (
@@ -893,6 +951,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
   const [walkMode, setWalkMode] = useState(false);
   const [roofMode, setRoofMode] = useState<'cerrado' | 'cruzado' | 'abierto'>('cerrado');
   const [showInfo, setShowInfo] = useState(false);
+  const [showDeck, setShowDeck] = useState(true);
   const [walkFloorState, setWalkFloor] = useState(1);
   const [spawn, setSpawn] = useState<[number, number] | null>(null);
   const [currentRoom, setCurrentRoom] = useState<string | null>(null);
@@ -1015,6 +1074,8 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
               <Text position={[entrada.backX, 2.4, entrada.backZ + 0.4]} fontSize={0.34} color="#1a2e20" anchorX="center" anchorY="middle">
                 Parte trasera
               </Text>
+              {/* Terraza de madera en la parte trasera */}
+              {showDeck && <TerrazaTrasera x={entrada.backX} z={entrada.backZ} />}
               {/* Letrero del sobrecimiento de piedra: tabla de madera en los cuatro frentes */}
               {[
                 { p: [entrada.midX, 0, entrada.z - 0.45] as [number, number, number], rotY: Math.PI },
@@ -1068,6 +1129,9 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
           </Button>
           <Button size="sm" variant={roofMode === 'abierto' ? 'default' : 'secondary'} onClick={() => setRoofMode('abierto')} className="shadow-md">
             Sin techo
+          </Button>
+          <Button size="sm" variant={showDeck ? 'default' : 'secondary'} onClick={() => setShowDeck(v => !v)} className="shadow-md">
+            {showDeck ? 'Sin terraza' : 'Con terraza'}
           </Button>
           <Button size="sm" variant="secondary" onClick={() => setShowInfo(v => !v)} className="shadow-md">
             <Info className="w-4 h-4 mr-1.5" /> ¿Por qué así?
