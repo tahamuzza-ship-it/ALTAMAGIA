@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Sky, Text } from '@react-three/drei';
+import { OrbitControls, Text } from '@react-three/drei';
 import Scenery3D from './Scenery3D';
 import { Room } from '@workspace/api-client-react';
 import { Vector3, BufferGeometry, BufferAttribute, DoubleSide } from 'three';
@@ -979,7 +979,8 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
   return (
     <div className="relative w-full h-full min-h-[500px]">
       <Canvas shadows camera={{ position: [center[0] + 15, 15, center[2] + 15], fov: 45 }} className="!absolute inset-0">
-        <Sky sunPosition={[10, 40, 10]} turbidity={0.05} rayleigh={2.2} mieCoefficient={0.002} mieDirectionalG={0.7} />
+        {/* Cielo azul sólido para que la casa resalte del fondo */}
+        <color attach="background" args={['#3d8de0']} />
         <ambientLight intensity={0.6} />
         <directionalLight 
           castShadow 
