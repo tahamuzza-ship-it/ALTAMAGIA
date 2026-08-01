@@ -17,7 +17,7 @@ export function Sidebar() {
       style={{ backgroundImage: `url(${burritoCampo})` }}
     >
       {/* Velo claro para que el texto se lea sobre la foto */}
-      <div className="absolute inset-0 bg-card/80 backdrop-blur-[1px]" />
+      <div className="absolute inset-0 bg-card/35" />
       <div className="relative flex flex-col flex-1">
       <div className="p-6 border-b">
         <h1 className="text-2xl font-serif font-bold text-primary flex items-center gap-2">
