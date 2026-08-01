@@ -203,15 +203,26 @@ function collides(x: number, z: number, boxes: Box2D[]): boolean {
   return false;
 }
 
-function WalkControls({ boxes, start, onExit }: { boxes: Box2D[], start: [number, number], onExit: () => void }) {
+// Detect touch-first devices (no fine pointer / no keyboard expected)
+function isTouchDevice(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+}
+
+type TouchInput = { move: { x: number, y: number }, look: { dx: number, dy: number } };
+
+function WalkControls({ boxes, start, onExit, touch, touchInput }: { boxes: Box2D[], start: [number, number], onExit: () => void, touch: boolean, touchInput: React.MutableRefObject<TouchInput> }) {
   const { camera } = useThree();
   const keys = useRef<Record<string, boolean>>({});
   const controlsRef = useRef<any>(null);
+  const yawPitch = useRef({ yaw: 0, pitch: 0 }); // yaw 0 = facing -Z
 
   useEffect(() => {
     camera.position.set(start[0], EYE_HEIGHT, start[1]);
     camera.lookAt(start[0], EYE_HEIGHT, start[1] - 5);
-  }, [camera, start]);
+    yawPitch.current = { yaw: 0, pitch: 0 };
+    if (touch) camera.rotation.order = 'YXZ';
+  }, [camera, start, touch]);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => { keys.current[e.code] = true; };
@@ -225,9 +236,26 @@ function WalkControls({ boxes, start, onExit }: { boxes: Box2D[], start: [number
   }, []);
 
   useFrame((_, delta) => {
+    const ti = touchInput.current;
+
+    // Touch look: apply accumulated drag deltas to camera yaw/pitch
+    if (touch && (ti.look.dx !== 0 || ti.look.dy !== 0)) {
+      const yp = yawPitch.current;
+      yp.yaw -= ti.look.dx * 0.005;
+      yp.pitch = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, yp.pitch - ti.look.dy * 0.005));
+      camera.rotation.set(yp.pitch, yp.yaw, 0, 'YXZ');
+      ti.look.dx = 0;
+      ti.look.dy = 0;
+    }
+
     const k = keys.current;
-    const fwd = (k['KeyW'] || k['ArrowUp'] ? 1 : 0) - (k['KeyS'] || k['ArrowDown'] ? 1 : 0);
-    const strafe = (k['KeyD'] || k['ArrowRight'] ? 1 : 0) - (k['KeyA'] || k['ArrowLeft'] ? 1 : 0);
+    let fwd = (k['KeyW'] || k['ArrowUp'] ? 1 : 0) - (k['KeyS'] || k['ArrowDown'] ? 1 : 0);
+    let strafe = (k['KeyD'] || k['ArrowRight'] ? 1 : 0) - (k['KeyA'] || k['ArrowLeft'] ? 1 : 0);
+    // Virtual joystick input (y up = forward)
+    if (!fwd && !strafe && (ti.move.x || ti.move.y)) {
+      fwd = ti.move.y;
+      strafe = ti.move.x;
+    }
     if (!fwd && !strafe) return;
 
     // Direction on the ground plane from camera heading
@@ -251,7 +279,79 @@ function WalkControls({ boxes, start, onExit }: { boxes: Box2D[], start: [number
     camera.position.y = EYE_HEIGHT;
   });
 
+  if (touch) return null; // touch look is handled via drag overlay
   return <PointerLockControls ref={controlsRef} onUnlock={onExit} />;
+}
+
+// Virtual joystick for touch movement
+function VirtualJoystick({ onChange }: { onChange: (x: number, y: number) => void }) {
+  const baseRef = useRef<HTMLDivElement>(null);
+  const [knob, setKnob] = useState({ x: 0, y: 0 });
+  const activeId = useRef<number | null>(null);
+  const RADIUS = 40;
+
+  const update = (clientX: number, clientY: number) => {
+    const base = baseRef.current;
+    if (!base) return;
+    const rect = base.getBoundingClientRect();
+    let dx = clientX - (rect.left + rect.width / 2);
+    let dy = clientY - (rect.top + rect.height / 2);
+    const len = Math.hypot(dx, dy);
+    if (len > RADIUS) { dx = (dx / len) * RADIUS; dy = (dy / len) * RADIUS; }
+    setKnob({ x: dx, y: dy });
+    onChange(dx / RADIUS, -dy / RADIUS); // up = forward
+  };
+
+  const reset = () => {
+    activeId.current = null;
+    setKnob({ x: 0, y: 0 });
+    onChange(0, 0);
+  };
+
+  return (
+    <div
+      ref={baseRef}
+      className="absolute bottom-6 left-6 z-20 w-28 h-28 rounded-full bg-black/30 backdrop-blur-sm border border-white/30 touch-none select-none"
+      onPointerDown={(e) => {
+        activeId.current = e.pointerId;
+        (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+        update(e.clientX, e.clientY);
+      }}
+      onPointerMove={(e) => { if (activeId.current === e.pointerId) update(e.clientX, e.clientY); }}
+      onPointerUp={(e) => { if (activeId.current === e.pointerId) reset(); }}
+      onPointerCancel={(e) => { if (activeId.current === e.pointerId) reset(); }}
+    >
+      <div
+        className="absolute top-1/2 left-1/2 w-12 h-12 rounded-full bg-white/70 shadow-lg"
+        style={{ transform: `translate(calc(-50% + ${knob.x}px), calc(-50% + ${knob.y}px))` }}
+      />
+    </div>
+  );
+}
+
+// Transparent overlay: drag anywhere (outside the joystick) to look around
+function LookPad({ lookRef }: { lookRef: React.MutableRefObject<TouchInput> }) {
+  const last = useRef<{ id: number, x: number, y: number } | null>(null);
+  return (
+    <div
+      className="absolute inset-0 z-10 touch-none select-none"
+      onPointerDown={(e) => {
+        if (last.current) return; // one look-finger at a time
+        last.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+        (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+      }}
+      onPointerMove={(e) => {
+        const l = last.current;
+        if (!l || l.id !== e.pointerId) return;
+        lookRef.current.look.dx += e.clientX - l.x;
+        lookRef.current.look.dy += e.clientY - l.y;
+        l.x = e.clientX;
+        l.y = e.clientY;
+      }}
+      onPointerUp={(e) => { if (last.current?.id === e.pointerId) last.current = null; }}
+      onPointerCancel={(e) => { if (last.current?.id === e.pointerId) last.current = null; }}
+    />
+  );
 }
 
 // Reusable scratch vector (avoids per-frame allocation)
@@ -259,6 +359,8 @@ const tmpVec = new Vector3();
 
 export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { rooms: Room[], wallSystem: string, roofType: string }) {
   const [walkMode, setWalkMode] = useState(false);
+  const touch = useMemo(() => isTouchDevice(), []);
+  const touchInput = useRef<TouchInput>({ move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 } });
   const maxH1 = Math.max(0, ...rooms.filter(r => r.floor === 1).map(r => r.heightM));
   const maxH2 = Math.max(0, ...rooms.filter(r => r.floor === 2).map(r => r.heightM));
 
@@ -324,7 +426,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
         </group>
 
         {walkMode ? (
-          <WalkControls boxes={collisionBoxes} start={walkStart} onExit={() => setWalkMode(false)} />
+          <WalkControls boxes={collisionBoxes} start={walkStart} onExit={() => setWalkMode(false)} touch={touch} touchInput={touchInput} />
         ) : (
           <OrbitControls target={[center[0], maxH1 / 2, center[2]]} minDistance={5} maxDistance={50} maxPolarAngle={Math.PI / 2 - 0.05} />
         )}
@@ -341,14 +443,22 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
         )
       ) : (
         <>
-          <div className="absolute top-3 left-3 z-10">
+          {touch && (
+            <>
+              <LookPad lookRef={touchInput} />
+              <VirtualJoystick onChange={(x, y) => { touchInput.current.move.x = x; touchInput.current.move.y = y; }} />
+            </>
+          )}
+          <div className="absolute top-3 left-3 z-30">
             <Button size="sm" variant="secondary" onClick={() => setWalkMode(false)} className="shadow-md">
               <X className="w-4 h-4 mr-1.5" /> Salir del recorrido
             </Button>
           </div>
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
             <div className="bg-black/60 text-white text-xs rounded-lg px-4 py-2 backdrop-blur-sm">
-              Haz clic en la escena para mirar con el mouse · WASD o flechas para caminar · ESC para soltar el mouse
+              {touch
+                ? 'Usa el joystick para caminar · Arrastra la pantalla para mirar'
+                : 'Haz clic en la escena para mirar con el mouse · WASD o flechas para caminar · ESC para soltar el mouse'}
             </div>
           </div>
           {/* Crosshair */}
