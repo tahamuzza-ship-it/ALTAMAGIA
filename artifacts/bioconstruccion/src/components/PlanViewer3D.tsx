@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, PointerLockControls, Sky, Text } from '@react-three/drei';
+import { OrbitControls, Sky, Text } from '@react-three/drei';
 import Scenery3D from './Scenery3D';
 import { Room } from '@workspace/api-client-react';
 import { Vector3, BufferGeometry, BufferAttribute, DoubleSide } from 'three';
@@ -21,7 +21,6 @@ const roofColors: Record<string, string> = {
   techo_verde: '#5c8a45'
 };
 
-const EYE_HEIGHT = 1.6;
 const PLAYER_RADIUS = 0.3;
 const WALK_SPEED = 3.0; // m/s
 const WALL_T = 0.2;
@@ -299,35 +298,67 @@ function isTouchDevice(): boolean {
 
 type TouchInput = { move: { x: number, y: number }, look: { dx: number, dy: number } };
 
-function WalkControls({ boxes, start, eyeY, floor, touch, touchInput, rooms, onRoomChange }: { boxes: Box2D[], start: [number, number], eyeY: number, floor: number, touch: boolean, touchInput: React.MutableRefObject<TouchInput>, rooms: Room[], onRoomChange: (name: string | null) => void }) {
+// Personita low-poly que camina por la casa
+function Personita() {
+  return (
+    <group>
+      {/* piernas */}
+      <mesh castShadow position={[-0.09, 0.2, 0]}>
+        <boxGeometry args={[0.13, 0.4, 0.15]} />
+        <meshStandardMaterial color="#5b4a3a" roughness={1} />
+      </mesh>
+      <mesh castShadow position={[0.09, 0.2, 0]}>
+        <boxGeometry args={[0.13, 0.4, 0.15]} />
+        <meshStandardMaterial color="#5b4a3a" roughness={1} />
+      </mesh>
+      {/* cuerpo */}
+      <mesh castShadow position={[0, 0.68, 0]}>
+        <boxGeometry args={[0.42, 0.56, 0.24]} />
+        <meshStandardMaterial color="#c2703e" roughness={1} />
+      </mesh>
+      {/* brazos */}
+      <mesh castShadow position={[-0.28, 0.66, 0]}>
+        <boxGeometry args={[0.11, 0.5, 0.13]} />
+        <meshStandardMaterial color="#c2703e" roughness={1} />
+      </mesh>
+      <mesh castShadow position={[0.28, 0.66, 0]}>
+        <boxGeometry args={[0.11, 0.5, 0.13]} />
+        <meshStandardMaterial color="#c2703e" roughness={1} />
+      </mesh>
+      {/* cabeza */}
+      <mesh castShadow position={[0, 1.12, 0]}>
+        <sphereGeometry args={[0.17, 12, 12]} />
+        <meshStandardMaterial color="#e8b48a" roughness={1} />
+      </mesh>
+      {/* sombrero campesino */}
+      <mesh castShadow position={[0, 1.26, 0]}>
+        <cylinderGeometry args={[0.28, 0.28, 0.04, 12]} />
+        <meshStandardMaterial color="#d9c08a" roughness={1} />
+      </mesh>
+      <mesh castShadow position={[0, 1.32, 0]}>
+        <cylinderGeometry args={[0.13, 0.15, 0.12, 12]} />
+        <meshStandardMaterial color="#d9c08a" roughness={1} />
+      </mesh>
+    </group>
+  );
+}
+
+const CAM_DIST = 7; // distancia de la cámara a la personita (45° arriba)
+
+function WalkControls({ boxes, start, floorY, floor, touchInput, rooms, onRoomChange }: { boxes: Box2D[], start: [number, number], floorY: number, floor: number, touchInput: React.MutableRefObject<TouchInput>, rooms: Room[], onRoomChange: (name: string | null) => void }) {
   const { camera } = useThree();
   const keys = useRef<Record<string, boolean>>({});
-  const controlsRef = useRef<any>(null);
-  const yawPitch = useRef({ yaw: 0, pitch: 0 }); // yaw 0 = facing -Z
+  const groupRef = useRef<any>(null);
+  const pos = useRef({ x: start[0], z: start[1] });
+  const yaw = useRef(0); // ángulo de la cámara alrededor de la personita
+  const facing = useRef(0); // hacia dónde mira la personita
   const lastRoom = useRef<string | null | undefined>(undefined);
 
-  const updateCurrentRoom = () => {
-    const x = camera.position.x;
-    const z = camera.position.z;
-    const room = rooms.find(r => {
-      if (r.floor !== floor) return false;
-      const rx = r.posX ?? 0;
-      const rz = r.posY ?? 0;
-      return x >= rx && x <= rx + r.widthM && z >= rz && z <= rz + r.lengthM;
-    });
-    const name = room ? room.name : null;
-    if (name !== lastRoom.current) {
-      lastRoom.current = name;
-      onRoomChange(name);
-    }
-  };
-
   useEffect(() => {
-    camera.position.set(start[0], eyeY, start[1]);
-    camera.lookAt(start[0], eyeY, start[1] - 5);
-    yawPitch.current = { yaw: 0, pitch: 0 };
-    if (touch) camera.rotation.order = 'YXZ';
-  }, [camera, start, eyeY, touch]);
+    pos.current = { x: start[0], z: start[1] };
+    yaw.current = 0;
+    facing.current = 0;
+  }, [start]);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => { keys.current[e.code] = true; };
@@ -341,53 +372,81 @@ function WalkControls({ boxes, start, eyeY, floor, touch, touchInput, rooms, onR
   }, []);
 
   useFrame((_, delta) => {
-    updateCurrentRoom();
-    const ti = touchInput.current;
+    const p = pos.current;
+    const dt = Math.min(delta, 0.1);
 
-    // Touch look: apply accumulated drag deltas to camera yaw/pitch
-    if (touch && (ti.look.dx !== 0 || ti.look.dy !== 0)) {
-      const yp = yawPitch.current;
-      yp.yaw -= ti.look.dx * 0.005;
-      yp.pitch = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, yp.pitch - ti.look.dy * 0.005));
-      camera.rotation.set(yp.pitch, yp.yaw, 0, 'YXZ');
-      ti.look.dx = 0;
-      ti.look.dy = 0;
+    // ¿En qué espacio está la personita?
+    const room = rooms.find(r => {
+      if (r.floor !== floor) return false;
+      const rx = r.posX ?? 0;
+      const rz = r.posY ?? 0;
+      return p.x >= rx && p.x <= rx + r.widthM && p.z >= rz && p.z <= rz + r.lengthM;
+    });
+    const name = room ? room.name : null;
+    if (name !== lastRoom.current) {
+      lastRoom.current = name;
+      onRoomChange(name);
     }
 
     const k = keys.current;
+    const ti = touchInput.current;
+
+    // Girar la cámara: arrastrar (mouse o dedo) o teclas Q/E
+    if (ti.look.dx !== 0 || ti.look.dy !== 0) {
+      yaw.current -= ti.look.dx * 0.006;
+      ti.look.dx = 0;
+      ti.look.dy = 0;
+    }
+    if (k['KeyQ']) yaw.current += dt * 1.8;
+    if (k['KeyE']) yaw.current -= dt * 1.8;
+
     let fwd = (k['KeyW'] || k['ArrowUp'] ? 1 : 0) - (k['KeyS'] || k['ArrowDown'] ? 1 : 0);
     let strafe = (k['KeyD'] || k['ArrowRight'] ? 1 : 0) - (k['KeyA'] || k['ArrowLeft'] ? 1 : 0);
-    // Virtual joystick input (y up = forward)
     if (!fwd && !strafe && (ti.move.x || ti.move.y)) {
       fwd = ti.move.y;
       strafe = ti.move.x;
     }
-    if (!fwd && !strafe) return;
 
-    // Direction on the ground plane from camera heading
-    camera.getWorldDirection(tmpVec);
-    const flen = Math.hypot(tmpVec.x, tmpVec.z) || 1;
-    const forward = { x: tmpVec.x / flen, z: tmpVec.z / flen };
-    const right = { x: -forward.z, z: forward.x };
-    const dir = {
-      x: forward.x * fwd + right.x * strafe,
-      z: forward.z * fwd + right.z * strafe,
-    };
-    const dlen = Math.hypot(dir.x, dir.z) || 1;
+    if (fwd || strafe) {
+      // Adelante = alejarse de la cámara
+      const forward = { x: -Math.sin(yaw.current), z: -Math.cos(yaw.current) };
+      const right = { x: -forward.z, z: forward.x };
+      const dir = {
+        x: forward.x * fwd + right.x * strafe,
+        z: forward.z * fwd + right.z * strafe,
+      };
+      const dlen = Math.hypot(dir.x, dir.z) || 1;
+      const step = WALK_SPEED * dt;
+      const nx = p.x + (dir.x / dlen) * step;
+      const nz = p.z + (dir.z / dlen) * step;
 
-    const step = WALK_SPEED * Math.min(delta, 0.1);
-    const nx = camera.position.x + (dir.x / dlen) * step;
-    const nz = camera.position.z + (dir.z / dlen) * step;
+      // Colisión por ejes para deslizarse por las paredes
+      if (!collides(nx, p.z, boxes)) p.x = nx;
+      if (!collides(p.x, nz, boxes)) p.z = nz;
 
-    // Axis-separated collision for wall sliding
-    if (!collides(nx, camera.position.z, boxes)) camera.position.x = nx;
-    if (!collides(camera.position.x, nz, boxes)) camera.position.z = nz;
-    camera.position.y = eyeY;
+      facing.current = Math.atan2(dir.x / dlen, dir.z / dlen);
+    }
+
+    // Personita
+    if (groupRef.current) {
+      groupRef.current.position.set(p.x, floorY, p.z);
+      groupRef.current.rotation.y = facing.current;
+    }
+
+    // Cámara a 45° por encima, siguiendo a la personita
+    camera.position.set(
+      p.x + Math.sin(yaw.current) * CAM_DIST,
+      floorY + CAM_DIST,
+      p.z + Math.cos(yaw.current) * CAM_DIST,
+    );
+    camera.lookAt(p.x, floorY + 0.9, p.z);
   });
 
-  if (touch) return null; // touch look is handled via drag overlay
-  // Nota: soltar el mouse (ESC) NO cierra el recorrido — solo el botón "Salir".
-  return <PointerLockControls ref={controlsRef} />;
+  return (
+    <group ref={groupRef} position={[start[0], floorY, start[1]]}>
+      <Personita />
+    </group>
+  );
 }
 
 // Virtual joystick for touch movement
@@ -462,7 +521,6 @@ function LookPad({ lookRef }: { lookRef: React.MutableRefObject<TouchInput> }) {
 }
 
 // Reusable scratch vector (avoids per-frame allocation)
-const tmpVec = new Vector3();
 
 export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { rooms: Room[], wallSystem: string, roofType: string }) {
   const [walkMode, setWalkMode] = useState(false);
@@ -506,7 +564,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
   }, [placedRooms, center, walkFloor]);
 
   const canWalk = placedRooms.some(r => r.floor === 1);
-  const walkEyeY = walkFloor === 2 ? maxH1 + 0.1 + EYE_HEIGHT : EYE_HEIGHT;
+  const walkFloorY = walkFloor === 2 ? maxH1 + 0.1 : 0;
 
   return (
     <div className="relative w-full h-full min-h-[500px]">
@@ -533,14 +591,17 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
         <Scenery3D center={center as [number, number, number]} />
 
         <group>
-          {placedRooms.map((r) => (
-            <Room3D key={r.id} room={r} maxH1={maxH1} wallSystem={wallSystem} />
-          ))}
-          <Roof rooms={placedRooms} maxH1={maxH1} maxH2={maxH2} roofType={roofType} />
+          {placedRooms
+            .filter((r) => !walkMode || r.floor <= walkFloor)
+            .map((r) => (
+              <Room3D key={r.id} room={r} maxH1={maxH1} wallSystem={wallSystem} />
+            ))}
+          {/* En el recorrido se quita el techo para ver la casa por dentro desde arriba */}
+          {!walkMode && <Roof rooms={placedRooms} maxH1={maxH1} maxH2={maxH2} roofType={roofType} />}
         </group>
 
         {walkMode ? (
-          <WalkControls boxes={collisionBoxes} start={spawn ?? walkStart} eyeY={walkEyeY} floor={walkFloor} touch={touch} touchInput={touchInput} rooms={placedRooms} onRoomChange={setCurrentRoom} />
+          <WalkControls boxes={collisionBoxes} start={spawn ?? walkStart} floorY={walkFloorY} floor={walkFloor} touchInput={touchInput} rooms={placedRooms} onRoomChange={setCurrentRoom} />
         ) : (
           <OrbitControls target={[center[0], maxH1 / 2, center[2]]} minDistance={5} maxDistance={50} maxPolarAngle={Math.PI / 2 - 0.05} />
         )}
@@ -557,11 +618,9 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
         )
       ) : (
         <>
+          <LookPad lookRef={touchInput} />
           {touch && (
-            <>
-              <LookPad lookRef={touchInput} />
-              <VirtualJoystick onChange={(x, y) => { touchInput.current.move.x = x; touchInput.current.move.y = y; }} />
-            </>
+            <VirtualJoystick onChange={(x, y) => { touchInput.current.move.x = x; touchInput.current.move.y = y; }} />
           )}
           <div className="absolute top-3 left-3 z-30 flex items-center gap-2">
             <Button size="sm" variant="secondary" onClick={() => { setWalkMode(false); setCurrentRoom(null); setSpawn(null); }} className="shadow-md">
@@ -616,13 +675,9 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
             <div className="bg-black/60 text-white text-xs rounded-lg px-4 py-2 backdrop-blur-sm">
               {touch
-                ? 'Usa el joystick para caminar · Arrastra la pantalla para mirar'
-                : 'Haz clic en la escena para mirar con el mouse · WASD o flechas para caminar · ESC suelta el mouse (sin salir del recorrido)'}
+                ? 'Usa el joystick para caminar · Arrastra la pantalla para girar la cámara'
+                : 'WASD o flechas para caminar · Arrastra con el mouse o usa Q/E para girar la cámara'}
             </div>
-          </div>
-          {/* Crosshair */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
-            <div className="w-1.5 h-1.5 rounded-full bg-white/80 shadow" />
           </div>
         </>
       )}
