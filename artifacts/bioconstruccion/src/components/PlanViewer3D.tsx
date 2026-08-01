@@ -90,6 +90,48 @@ function WallWithDoor({ axis, cx, cz, span, baseZ, h, hBot, cBot, cTop, withWind
   );
 }
 
+// Baranda de guadua para el altillo (con abertura centrada, igual que las puertas)
+function Baranda({ axis, cx, cz, span, baseZ }: { axis: 'x' | 'z', cx: number, cz: number, span: number, baseZ: number }) {
+  const RAIL_H = 0.95;
+  // Baranda continua (sin abertura): la personita llega al altillo con los botones "Ir a"
+  const seg = span / 2;
+  if (seg <= 0.05) return null;
+  const offs = [-seg / 2, seg / 2];
+  const pos = (o: number): [number, number, number] => axis === 'x' ? [cx + o, 0, cz] : [cx, 0, cz + o];
+  const railRot: [number, number, number] = axis === 'x' ? [0, 0, Math.PI / 2] : [Math.PI / 2, 0, 0];
+
+  return (
+    <group>
+      {offs.map((o, i) => {
+        const [px, , pz] = pos(o);
+        const nPosts = Math.max(2, Math.round(seg / 0.7) + 1);
+        return (
+          <group key={i}>
+            {/* pasamanos y travesaño */}
+            {[RAIL_H, 0.5].map((hy, j) => (
+              <mesh key={`r${j}`} castShadow position={[px, baseZ + hy, pz]} rotation={railRot}>
+                <cylinderGeometry args={[0.045, 0.045, seg, 6]} />
+                <meshStandardMaterial color="#9aa25c" roughness={0.8} />
+              </mesh>
+            ))}
+            {/* parales */}
+            {Array.from({ length: nPosts }, (_, j) => {
+              const t = nPosts === 1 ? 0 : j / (nPosts - 1) - 0.5;
+              const [qx, , qz] = pos(o + t * seg);
+              return (
+                <mesh key={`p${j}`} castShadow position={[qx, baseZ + RAIL_H / 2, qz]}>
+                  <cylinderGeometry args={[0.04, 0.05, RAIL_H, 6]} />
+                  <meshStandardMaterial color="#9aa25c" roughness={0.8} />
+                </mesh>
+              );
+            })}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
 function Room3D({ room, maxH1, wallSystem }: { room: Room, maxH1: number, wallSystem: string }) {
   const isFloor2 = room.floor === 2;
   const baseZ = isFloor2 ? maxH1 : 0;
@@ -110,6 +152,45 @@ function Room3D({ room, maxH1, wallSystem }: { room: Room, maxH1: number, wallSy
   const hBot = isMixta ? Math.min(1.2, h) : h;
   const hTop = Math.max(0, h - hBot);
 
+
+  // Altillo: entrepiso de madera con vigas de guadua y baranda — sin paredes ni plancha
+  if (isFloor2) {
+    const nBeams = Math.max(2, Math.round(w / 1) + 1);
+    return (
+      <group>
+        {/* Tablero del entrepiso (esterilla/madera) */}
+        <mesh position={[x, floorY, z]} receiveShadow castShadow>
+          <boxGeometry args={[w, 0.08, l]} />
+          <meshStandardMaterial color="#b08c5f" roughness={1} />
+        </mesh>
+        {/* Vigas de guadua debajo del entrepiso */}
+        {Array.from({ length: nBeams }, (_, i) => {
+          const t01 = nBeams === 1 ? 0 : i / (nBeams - 1) - 0.5;
+          return (
+            <mesh key={`beam${i}`} castShadow position={[x + t01 * (w - 0.2), baseZ - 0.07, z]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.07, 0.07, l, 7]} />
+              <meshStandardMaterial color="#9aa25c" roughness={0.8} />
+            </mesh>
+          );
+        })}
+        {/* Barandas de guadua en el borde (con abertura como acceso) */}
+        <Baranda axis="x" cx={x} cz={z - l / 2 + t / 2} span={w} baseZ={baseZ + 0.1} />
+        <Baranda axis="x" cx={x} cz={z + l / 2 - t / 2} span={w} baseZ={baseZ + 0.1} />
+        <Baranda axis="z" cx={x - w / 2 + t / 2} cz={z} span={l} baseZ={baseZ + 0.1} />
+        <Baranda axis="z" cx={x + w / 2 - t / 2} cz={z} span={l} baseZ={baseZ + 0.1} />
+        <Text
+          position={[x, baseZ + 1.6, z]}
+          fontSize={0.4}
+          color="#1a2e20"
+          anchorX="center"
+          anchorY="middle"
+          rotation={[-Math.PI / 2, 0, 0]}
+        >
+          {room.name}
+        </Text>
+      </group>
+    );
+  }
 
   return (
     <group>
@@ -177,13 +258,33 @@ function Roof({ rooms, maxH1, maxH2, roofType }: { rooms: Room[], maxH1: number,
   const cx = (minX + maxX) / 2;
   const cz = (minZ + maxZ) / 2;
   
-  const totalH = maxH1 + maxH2;
+  // El techo arranca sobre las paredes del piso 1; el altillo queda DEBAJO del techo
+  const totalH = maxH1;
   const roofCol = roofColors[roofType] || roofColors.teja_barro;
 
   const isXLonger = w >= l;
-  const angle = Math.PI / 6; // 30 degrees pitch
   const roofLen = isXLonger ? w : l;
   const roofSpan = isXLonger ? l : w;
+  // Pendiente: mínimo 30°, la necesaria para que el altillo quepa bajo la cumbrera,
+  // y además que la baranda del altillo (≈1.15 m) libre el techo en sus bordes.
+  let angle = Math.PI / 6;
+  const f2Rooms = rooms.filter(r => r.floor === 2);
+  if (maxH2 > 0 && f2Rooms.length) {
+    angle = Math.max(angle, Math.atan((maxH2 + 0.4) / (roofSpan / 2)));
+    // Distancia máxima (en el sentido corto) de un borde del altillo a la cumbrera
+    let cEdge = 0;
+    f2Rooms.forEach(r => {
+      const a0 = isXLonger ? (r.posY ?? 0) : (r.posX ?? 0);
+      const a1 = a0 + (isXLonger ? r.lengthM : r.widthM);
+      const ridge = isXLonger ? cz : cx;
+      cEdge = Math.max(cEdge, Math.abs(a0 - ridge), Math.abs(a1 - ridge));
+    });
+    const clear = roofSpan / 2 - cEdge;
+    if (clear > 0.3) {
+      angle = Math.max(angle, Math.atan(1.25 / clear));
+    }
+    angle = Math.min(angle, Math.PI * 0.3); // tope ~54° para que no quede absurdo
+  }
   const slopeLen = (roofSpan / 2) / Math.cos(angle);
   const actualH = (roofSpan / 2) * Math.tan(angle);
 
@@ -255,6 +356,16 @@ function buildCollisionBoxes(rooms: Room[], floor: number): Box2D[] {
     const l = room.lengthM;
     const x0 = room.posX ?? 0;
     const z0 = room.posY ?? 0;
+
+    // El altillo es una plataforma con baranda continua: sin aberturas,
+    // para que la personita no pueda "caerse" del borde.
+    if (floor === 2) {
+      boxes.push({ minX: x0, maxX: x0 + w, minZ: z0, maxZ: z0 + t });
+      boxes.push({ minX: x0, maxX: x0 + w, minZ: z0 + l - t, maxZ: z0 + l });
+      boxes.push({ minX: x0, maxX: x0 + t, minZ: z0, maxZ: z0 + l });
+      boxes.push({ minX: x0 + w - t, maxX: x0 + w, minZ: z0, maxZ: z0 + l });
+      return;
+    }
 
     // Horizontal walls (along X) at z0 and z0+l, split around a central door gap
     const gapW = Math.min(DOOR_WIDTH, w * 0.5);
