@@ -71,16 +71,27 @@ export function Sidebar() {
 
 export function MobileNav() {
   return (
-    <div className="md:hidden flex items-center justify-between p-4 border-b bg-card">
-      <h1 className="text-xl font-serif font-bold text-primary flex items-center gap-2">
-        <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center text-primary-foreground text-xs">
-          B
-        </div>
-        BioCasa
-      </h1>
-      <Button variant="ghost" size="icon">
-        <Menu className="w-5 h-5" />
-      </Button>
+    <div className="md:hidden border-b bg-card">
+      <div className="flex items-center justify-between p-4">
+        <h1 className="text-xl font-serif font-bold text-primary flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center text-primary-foreground text-xs">
+            B
+          </div>
+          BioCasa
+        </h1>
+        <Button variant="ghost" size="icon">
+          <Menu className="w-5 h-5" />
+        </Button>
+      </div>
+      {/* Franja con la foto del burrito, visible solo en celular */}
+      <div
+        className="h-24 bg-cover"
+        style={{
+          backgroundImage: `url(${burritoCampo})`,
+          backgroundPosition: "0% 38%",
+          filter: "saturate(1.45) contrast(1.08) brightness(1.05)",
+        }}
+      />
     </div>
   );
 }
