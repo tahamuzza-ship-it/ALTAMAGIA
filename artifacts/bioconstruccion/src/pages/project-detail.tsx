@@ -437,7 +437,32 @@ export default function ProjectDetail() {
       return next;
     });
   };
-  const finalTotal = (catalogMaterials || []).reduce((sum, m) => sum + (finalQty[m.id] || 0) * m.unitPrice, 0);
+  // Costos adicionales de la cotización final (arquitecto, permisos, maestría)
+  const EXTRA_ITEMS = [
+    { key: "arquitecto", label: "Firma del arquitecto (diseño y planos)" },
+    { key: "permisos", label: "Permisos y licencia de construcción" },
+    { key: "maestria", label: "Maestría (dirección de obra)" },
+  ] as const;
+  const finalExtraKey = `biocasa-final-extra-${projectId}`;
+  const [finalExtras, setFinalExtras] = useState<Record<string, number>>({});
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(finalExtraKey);
+      setFinalExtras(saved ? JSON.parse(saved) : {});
+    } catch { setFinalExtras({}); }
+  }, [finalExtraKey]);
+  const setExtra = (key: string, value: number) => {
+    setFinalExtras(prev => {
+      const next = { ...prev };
+      if (value > 0) next[key] = value;
+      else delete next[key];
+      try { localStorage.setItem(finalExtraKey, JSON.stringify(next)); } catch { /* sin espacio */ }
+      return next;
+    });
+  };
+  const extrasTotal = EXTRA_ITEMS.reduce((sum, it) => sum + (finalExtras[it.key] || 0), 0);
+  const materialsTotal = (catalogMaterials || []).reduce((sum, m) => sum + (finalQty[m.id] || 0) * m.unitPrice, 0);
+  const finalTotal = materialsTotal + extrasTotal;
 
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
@@ -1082,8 +1107,44 @@ export default function ProjectDetail() {
                       </Table>
                     </div>
                   ))}
+                  <div>
+                    <h4 className="font-serif font-semibold text-lg mb-3 text-primary border-b pb-1">Costos adicionales</h4>
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead>Concepto</TableHead>
+                          <TableHead className="text-right w-[200px]">Valor (COP)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {EXTRA_ITEMS.map((it) => (
+                          <TableRow key={it.key}>
+                            <TableCell className="font-medium">{it.label}</TableCell>
+                            <TableCell className="text-right">
+                              <Input
+                                type="number"
+                                min={0}
+                                step="any"
+                                inputMode="numeric"
+                                className="w-[180px] ml-auto text-right"
+                                value={finalExtras[it.key] ?? ""}
+                                placeholder="0"
+                                onChange={(e) => setExtra(it.key, Number(e.target.value) || 0)}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="bg-muted/50 hover:bg-muted/50">
+                          <TableCell className="text-right font-medium text-muted-foreground">Subtotal adicionales:</TableCell>
+                          <TableCell className="text-right font-bold">{formatCOP(Math.round(extrasTotal))}</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+
                   <div className="flex justify-end pt-6 border-t border-primary/20">
                     <div className="bg-primary/5 px-8 py-4 rounded-xl border border-primary/20 text-right">
+                      <p className="text-sm text-muted-foreground mb-1">Materiales: {formatCOP(Math.round(materialsTotal))} + Adicionales: {formatCOP(Math.round(extrasTotal))}</p>
                       <p className="text-sm text-primary font-medium mb-1">Total cotización final</p>
                       <h2 className="text-4xl font-serif font-bold text-foreground">{formatCOP(Math.round(finalTotal))}</h2>
                     </div>
