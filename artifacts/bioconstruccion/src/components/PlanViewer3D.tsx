@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, PointerLockControls, Sky, Text } from '@react-three/drei';
+import Scenery3D from './Scenery3D';
 import { Room } from '@workspace/api-client-react';
 import { Vector3 } from 'three';
 import { Button } from '@/components/ui/button';
@@ -309,9 +310,11 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
         
         {/* Ground plane */}
         <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[center[0], -0.01, center[2]]}>
-          <planeGeometry args={[200, 200]} />
-          <meshStandardMaterial color="#8b9c7b" roughness={1} />
+          <planeGeometry args={[300, 300]} />
+          <meshStandardMaterial color="#7fa864" roughness={1} />
         </mesh>
+
+        <Scenery3D center={center as [number, number, number]} />
 
         <group>
           {placedRooms.map((r) => (
