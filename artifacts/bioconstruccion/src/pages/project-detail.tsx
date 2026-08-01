@@ -1,9 +1,10 @@
-import { useState, useRef, useMemo, Suspense, lazy } from "react";
+import { useState, useRef, useMemo, useEffect, Suspense, lazy } from "react";
 import { useRoute, useLocation } from "wouter";
 import { 
   useGetProject, useUpdateProject, useDeleteProject, 
   useListRooms, useCreateRoom, useUpdateRoom, useDeleteRoom, 
-  useGetProjectEstimate, getGetProjectQueryKey, getListRoomsQueryKey, getGetProjectEstimateQueryKey, getListProjectsQueryKey
+  useGetProjectEstimate, getGetProjectQueryKey, getListRoomsQueryKey, getGetProjectEstimateQueryKey, getListProjectsQueryKey,
+  useListMaterials
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
@@ -416,6 +417,27 @@ export default function ProjectDetail() {
   const { data: project, isLoading: projectLoading } = useGetProject(projectId, { query: { enabled: !!projectId, queryKey: getGetProjectQueryKey(projectId) } });
   const { data: rooms, isLoading: roomsLoading } = useListRooms(projectId, { query: { enabled: !!projectId, queryKey: getListRoomsQueryKey(projectId) } });
   const { data: estimate, isLoading: estimateLoading } = useGetProjectEstimate(projectId, { query: { enabled: !!projectId, queryKey: getGetProjectEstimateQueryKey(projectId) } });
+  const { data: catalogMaterials } = useListMaterials();
+
+  // Cotización final: cantidades que el usuario digita a mano (se guardan en el navegador)
+  const finalQtyKey = `biocasa-final-qty-${projectId}`;
+  const [finalQty, setFinalQty] = useState<Record<number, number>>({});
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(finalQtyKey);
+      setFinalQty(saved ? JSON.parse(saved) : {});
+    } catch { setFinalQty({}); }
+  }, [finalQtyKey]);
+  const setQty = (materialId: number, value: number) => {
+    setFinalQty(prev => {
+      const next = { ...prev };
+      if (value > 0) next[materialId] = value;
+      else delete next[materialId];
+      try { localStorage.setItem(finalQtyKey, JSON.stringify(next)); } catch { /* sin espacio */ }
+      return next;
+    });
+  };
+  const finalTotal = (catalogMaterials || []).reduce((sum, m) => sum + (finalQty[m.id] || 0) * m.unitPrice, 0);
 
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
@@ -818,9 +840,10 @@ export default function ProjectDetail() {
       </div>
 
       <Tabs defaultValue="plano" className="mt-8">
-        <TabsList className="grid w-full md:w-auto grid-cols-2 h-auto p-1 bg-muted/50">
+        <TabsList className="grid w-full md:w-auto grid-cols-3 h-auto p-1 bg-muted/50">
           <TabsTrigger value="plano" className="py-2.5">Diseño de Planos</TabsTrigger>
-          <TabsTrigger value="cotizacion" className="py-2.5">Cotización de Materiales</TabsTrigger>
+          <TabsTrigger value="cotizacion" className="py-2.5">Cotización preliminar</TabsTrigger>
+          <TabsTrigger value="cotizacion-final" className="py-2.5">Cotización final</TabsTrigger>
         </TabsList>
         
         <TabsContent value="plano" className="mt-6">
@@ -909,10 +932,10 @@ export default function ProjectDetail() {
         <TabsContent value="cotizacion" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Cantidades de Obra y Presupuesto</CardTitle>
+              <CardTitle>Cotización preliminar (sin ultimar detalles)</CardTitle>
               <CardDescription>
-                Calculado automáticamente basado en los {rooms?.length || 0} espacios. <br/>
-                <span className="text-primary/80 font-medium">Nota: Las cantidades son aproximaciones de anteproyecto. El rubro "Otros" (con unidad "día") corresponde a jornadas de obra.</span>
+                Calculada automáticamente con las medidas de los {rooms?.length || 0} espacios: la app toma los metros cuadrados de pisos, muros y techo, les aplica un rendimiento por m² para cada material (la fórmula aparece debajo de cada ítem) y multiplica por el precio del catálogo. <br/>
+                <span className="text-primary/80 font-medium">Es una aproximación de anteproyecto para tener un orden de magnitud. Cuando tengas la lista definitiva de materiales, usa la pestaña "Cotización final". El rubro "Otros" (con unidad "día") corresponde a jornadas de obra.</span>
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -986,6 +1009,83 @@ export default function ProjectDetail() {
                     <div className="bg-primary/5 px-8 py-4 rounded-xl border border-primary/20 text-right">
                       <p className="text-sm text-primary font-medium mb-1">Costo Total Directo</p>
                       <h2 className="text-4xl font-serif font-bold text-foreground">{formatCOP(estimate.totalCost)}</h2>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="cotizacion-final" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Cotización final</CardTitle>
+              <CardDescription>
+                Cuando ya tengas la lista definitiva de materiales, escribe aquí la cantidad de cada uno y el total sale al instante con los precios de tu catálogo. Las cantidades se guardan en este navegador.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!catalogMaterials || catalogMaterials.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  No hay materiales en el catálogo. Agrégalos primero en la página de Materiales.
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {Object.entries(
+                    catalogMaterials.reduce((acc, m) => {
+                      if (!acc[m.category]) acc[m.category] = [];
+                      acc[m.category].push(m);
+                      return acc;
+                    }, {} as Record<string, typeof catalogMaterials>)
+                  ).map(([category, mats]) => (
+                    <div key={category}>
+                      <h4 className="font-serif font-semibold text-lg capitalize mb-3 text-primary border-b pb-1">{category}</h4>
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="hover:bg-transparent">
+                            <TableHead>Material</TableHead>
+                            <TableHead className="text-right">V. Unitario</TableHead>
+                            <TableHead className="text-right w-[130px]">Cantidad</TableHead>
+                            <TableHead className="text-right">Subtotal</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {mats.map((m) => (
+                            <TableRow key={m.id}>
+                              <TableCell className="font-medium">{m.name} <span className="text-muted-foreground font-normal">({m.unit})</span></TableCell>
+                              <TableCell className="text-right text-muted-foreground">{formatCOP(m.unitPrice)}</TableCell>
+                              <TableCell className="text-right">
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  step="any"
+                                  inputMode="decimal"
+                                  className="w-[110px] ml-auto text-right"
+                                  value={finalQty[m.id] ?? ""}
+                                  placeholder="0"
+                                  onChange={(e) => setQty(m.id, Number(e.target.value) || 0)}
+                                />
+                              </TableCell>
+                              <TableCell className="text-right font-medium">
+                                {finalQty[m.id] ? formatCOP(Math.round(finalQty[m.id] * m.unitPrice)) : "—"}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow className="bg-muted/50 hover:bg-muted/50">
+                            <TableCell colSpan={3} className="text-right font-medium text-muted-foreground">Subtotal {category}:</TableCell>
+                            <TableCell className="text-right font-bold">
+                              {formatCOP(Math.round(mats.reduce((sum, m) => sum + (finalQty[m.id] || 0) * m.unitPrice, 0)))}
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ))}
+                  <div className="flex justify-end pt-6 border-t border-primary/20">
+                    <div className="bg-primary/5 px-8 py-4 rounded-xl border border-primary/20 text-right">
+                      <p className="text-sm text-primary font-medium mb-1">Total cotización final</p>
+                      <h2 className="text-4xl font-serif font-bold text-foreground">{formatCOP(Math.round(finalTotal))}</h2>
                     </div>
                   </div>
                 </div>
