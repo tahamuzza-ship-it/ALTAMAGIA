@@ -7,6 +7,8 @@
  */
 import type { ProjectUpdateRoofType } from './projectUpdateRoofType';
 import type { ProjectUpdateStatus } from './projectUpdateStatus';
+import type { ProjectUpdateTerrainAccess } from './projectUpdateTerrainAccess';
+import type { ProjectUpdateTerrainSlope } from './projectUpdateTerrainSlope';
 import type { ProjectUpdateWallSystem } from './projectUpdateWallSystem';
 
 export interface ProjectUpdate {
@@ -21,4 +23,18 @@ export interface ProjectUpdate {
   status?: ProjectUpdateStatus;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  terrainAccess?: ProjectUpdateTerrainAccess;
+  /** @nullable */
+  terrainSlope?: ProjectUpdateTerrainSlope;
+  /** @nullable */
+  waterDistanceM?: number | null;
+  /** @nullable */
+  canStay?: boolean | null;
+  /** @nullable */
+  canCook?: boolean | null;
+  /** @nullable */
+  numPeople?: number | null;
+  /** @nullable */
+  targetMonths?: number | null;
 }

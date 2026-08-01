@@ -7,6 +7,8 @@
  */
 import type { ProjectRoofType } from './projectRoofType';
 import type { ProjectStatus } from './projectStatus';
+import type { ProjectTerrainAccess } from './projectTerrainAccess';
+import type { ProjectTerrainSlope } from './projectTerrainSlope';
 import type { ProjectWallSystem } from './projectWallSystem';
 
 export interface Project {
@@ -22,5 +24,37 @@ export interface Project {
   status: ProjectStatus;
   /** @nullable */
   notes?: string | null;
+  /**
+     * Ease of access to the terrain
+     * @nullable
+     */
+  terrainAccess?: ProjectTerrainAccess;
+  /** @nullable */
+  terrainSlope?: ProjectTerrainSlope;
+  /**
+     * Distance to water source in meters
+     * @nullable
+     */
+  waterDistanceM?: number | null;
+  /**
+     * Whether the crew can stay on site
+     * @nullable
+     */
+  canStay?: boolean | null;
+  /**
+     * Whether the crew can cook on site
+     * @nullable
+     */
+  canCook?: boolean | null;
+  /**
+     * Number of people the house is for
+     * @nullable
+     */
+  numPeople?: number | null;
+  /**
+     * Target construction time in months
+     * @nullable
+     */
+  targetMonths?: number | null;
   createdAt: string;
 }

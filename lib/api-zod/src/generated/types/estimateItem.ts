@@ -17,4 +17,6 @@ export interface EstimateItem {
   subtotal: number;
   /** False when no catalog price was found */
   priced: boolean;
+  /** Human-readable explanation (Spanish) of how the quantity was computed */
+  formula?: string;
 }

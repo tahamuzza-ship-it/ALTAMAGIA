@@ -10,6 +10,11 @@ import type { RoomInputKind } from './roomInputKind';
 export interface RoomInput {
   /** @minLength 1 */
   name: string;
+  /**
+     * @minimum 1
+     * @maximum 2
+     */
+  floor?: number;
   kind: RoomInputKind;
   /** @exclusiveMinimum 0 */
   widthM: number;

@@ -11,6 +11,8 @@ export interface Room {
   id: number;
   projectId: number;
   name: string;
+  /** Floor number: 1 = planta baja, 2 = segundo piso / mezzanine */
+  floor: number;
   kind: RoomKind;
   /** Width in meters */
   widthM: number;

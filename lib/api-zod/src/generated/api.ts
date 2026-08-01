@@ -29,6 +29,13 @@ export const ListProjectsResponseItem = zod.object({
   "roofType": zod.enum(['teja_barro', 'palma', 'zinc', 'techo_verde']),
   "status": zod.enum(['diseno', 'cotizado', 'construccion', 'terminado']),
   "notes": zod.string().nullish(),
+  "terrainAccess": zod.union([zod.literal('facil'),zod.literal('medio'),zod.literal('dificil'),zod.literal(null)]).nullish().describe('Ease of access to the terrain'),
+  "terrainSlope": zod.union([zod.literal('plano'),zod.literal('pendiente_suave'),zod.literal('pendiente_fuerte'),zod.literal(null)]).nullish(),
+  "waterDistanceM": zod.number().nullish().describe('Distance to water source in meters'),
+  "canStay": zod.boolean().nullish().describe('Whether the crew can stay on site'),
+  "canCook": zod.boolean().nullish().describe('Whether the crew can cook on site'),
+  "numPeople": zod.int().nullish().describe('Number of people the house is for'),
+  "targetMonths": zod.number().nullish().describe('Target construction time in months'),
   "createdAt": zod.string()
 })
 export const ListProjectsResponse = zod.array(ListProjectsResponseItem)
@@ -47,7 +54,14 @@ export const CreateProjectBody = zod.object({
   "wallSystem": zod.enum(['bahareque', 'tapia_pisada', 'adobe', 'guadua_vista']),
   "roofType": zod.enum(['teja_barro', 'palma', 'zinc', 'techo_verde']),
   "status": zod.enum(['diseno', 'cotizado', 'construccion', 'terminado']).optional(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "terrainAccess": zod.enum(['facil', 'medio', 'dificil']).optional(),
+  "terrainSlope": zod.enum(['plano', 'pendiente_suave', 'pendiente_fuerte']).optional(),
+  "waterDistanceM": zod.number().optional(),
+  "canStay": zod.boolean().optional(),
+  "canCook": zod.boolean().optional(),
+  "numPeople": zod.int().optional(),
+  "targetMonths": zod.number().optional()
 })
 
 export const CreateProjectResponse = zod.object({
@@ -59,6 +73,13 @@ export const CreateProjectResponse = zod.object({
   "roofType": zod.enum(['teja_barro', 'palma', 'zinc', 'techo_verde']),
   "status": zod.enum(['diseno', 'cotizado', 'construccion', 'terminado']),
   "notes": zod.string().nullish(),
+  "terrainAccess": zod.union([zod.literal('facil'),zod.literal('medio'),zod.literal('dificil'),zod.literal(null)]).nullish().describe('Ease of access to the terrain'),
+  "terrainSlope": zod.union([zod.literal('plano'),zod.literal('pendiente_suave'),zod.literal('pendiente_fuerte'),zod.literal(null)]).nullish(),
+  "waterDistanceM": zod.number().nullish().describe('Distance to water source in meters'),
+  "canStay": zod.boolean().nullish().describe('Whether the crew can stay on site'),
+  "canCook": zod.boolean().nullish().describe('Whether the crew can cook on site'),
+  "numPeople": zod.int().nullish().describe('Number of people the house is for'),
+  "targetMonths": zod.number().nullish().describe('Target construction time in months'),
   "createdAt": zod.string()
 })
 
@@ -79,6 +100,13 @@ export const GetProjectResponse = zod.object({
   "roofType": zod.enum(['teja_barro', 'palma', 'zinc', 'techo_verde']),
   "status": zod.enum(['diseno', 'cotizado', 'construccion', 'terminado']),
   "notes": zod.string().nullish(),
+  "terrainAccess": zod.union([zod.literal('facil'),zod.literal('medio'),zod.literal('dificil'),zod.literal(null)]).nullish().describe('Ease of access to the terrain'),
+  "terrainSlope": zod.union([zod.literal('plano'),zod.literal('pendiente_suave'),zod.literal('pendiente_fuerte'),zod.literal(null)]).nullish(),
+  "waterDistanceM": zod.number().nullish().describe('Distance to water source in meters'),
+  "canStay": zod.boolean().nullish().describe('Whether the crew can stay on site'),
+  "canCook": zod.boolean().nullish().describe('Whether the crew can cook on site'),
+  "numPeople": zod.int().nullish().describe('Number of people the house is for'),
+  "targetMonths": zod.number().nullish().describe('Target construction time in months'),
   "createdAt": zod.string()
 })
 
@@ -100,7 +128,14 @@ export const UpdateProjectBody = zod.object({
   "wallSystem": zod.enum(['bahareque', 'tapia_pisada', 'adobe', 'guadua_vista']).optional(),
   "roofType": zod.enum(['teja_barro', 'palma', 'zinc', 'techo_verde']).optional(),
   "status": zod.enum(['diseno', 'cotizado', 'construccion', 'terminado']).optional(),
-  "notes": zod.string().nullish()
+  "notes": zod.string().nullish(),
+  "terrainAccess": zod.union([zod.literal('facil'),zod.literal('medio'),zod.literal('dificil'),zod.literal(null)]).nullish(),
+  "terrainSlope": zod.union([zod.literal('plano'),zod.literal('pendiente_suave'),zod.literal('pendiente_fuerte'),zod.literal(null)]).nullish(),
+  "waterDistanceM": zod.number().nullish(),
+  "canStay": zod.boolean().nullish(),
+  "canCook": zod.boolean().nullish(),
+  "numPeople": zod.int().nullish(),
+  "targetMonths": zod.number().nullish()
 })
 
 export const UpdateProjectResponse = zod.object({
@@ -112,6 +147,13 @@ export const UpdateProjectResponse = zod.object({
   "roofType": zod.enum(['teja_barro', 'palma', 'zinc', 'techo_verde']),
   "status": zod.enum(['diseno', 'cotizado', 'construccion', 'terminado']),
   "notes": zod.string().nullish(),
+  "terrainAccess": zod.union([zod.literal('facil'),zod.literal('medio'),zod.literal('dificil'),zod.literal(null)]).nullish().describe('Ease of access to the terrain'),
+  "terrainSlope": zod.union([zod.literal('plano'),zod.literal('pendiente_suave'),zod.literal('pendiente_fuerte'),zod.literal(null)]).nullish(),
+  "waterDistanceM": zod.number().nullish().describe('Distance to water source in meters'),
+  "canStay": zod.boolean().nullish().describe('Whether the crew can stay on site'),
+  "canCook": zod.boolean().nullish().describe('Whether the crew can cook on site'),
+  "numPeople": zod.int().nullish().describe('Number of people the house is for'),
+  "targetMonths": zod.number().nullish().describe('Target construction time in months'),
   "createdAt": zod.string()
 })
 
@@ -137,6 +179,7 @@ export const ListRoomsResponseItem = zod.object({
   "id": zod.int(),
   "projectId": zod.int(),
   "name": zod.string(),
+  "floor": zod.int().describe('Floor number: 1 = planta baja, 2 = segundo piso \/ mezzanine'),
   "kind": zod.enum(['habitacion', 'sala', 'cocina', 'bano', 'comedor', 'corredor', 'taller', 'otro']),
   "widthM": zod.number().describe('Width in meters'),
   "lengthM": zod.number().describe('Length in meters'),
@@ -155,6 +198,9 @@ export const CreateRoomParams = zod.object({
 })
 
 
+export const createRoomBodyFloorDefault = 1;
+export const createRoomBodyFloorMax = 2;
+
 export const createRoomBodyWidthMExclusiveMin = 0;
 
 export const createRoomBodyLengthMExclusiveMin = 0;
@@ -165,6 +211,7 @@ export const createRoomBodyHeightMExclusiveMin = 0;
 
 export const CreateRoomBody = zod.object({
   "name": zod.string().min(1),
+  "floor": zod.int().min(1).max(createRoomBodyFloorMax).default(createRoomBodyFloorDefault),
   "kind": zod.enum(['habitacion', 'sala', 'cocina', 'bano', 'comedor', 'corredor', 'taller', 'otro']),
   "widthM": zod.number().gt(createRoomBodyWidthMExclusiveMin),
   "lengthM": zod.number().gt(createRoomBodyLengthMExclusiveMin),
@@ -177,6 +224,7 @@ export const CreateRoomResponse = zod.object({
   "id": zod.int(),
   "projectId": zod.int(),
   "name": zod.string(),
+  "floor": zod.int().describe('Floor number: 1 = planta baja, 2 = segundo piso \/ mezzanine'),
   "kind": zod.enum(['habitacion', 'sala', 'cocina', 'bano', 'comedor', 'corredor', 'taller', 'otro']),
   "widthM": zod.number().describe('Width in meters'),
   "lengthM": zod.number().describe('Length in meters'),
@@ -194,6 +242,8 @@ export const UpdateRoomParams = zod.object({
 })
 
 
+export const updateRoomBodyFloorMax = 2;
+
 export const updateRoomBodyWidthMExclusiveMin = 0;
 
 export const updateRoomBodyLengthMExclusiveMin = 0;
@@ -204,6 +254,7 @@ export const updateRoomBodyHeightMExclusiveMin = 0;
 
 export const UpdateRoomBody = zod.object({
   "name": zod.string().min(1).optional(),
+  "floor": zod.int().min(1).max(updateRoomBodyFloorMax).optional(),
   "kind": zod.enum(['habitacion', 'sala', 'cocina', 'bano', 'comedor', 'corredor', 'taller', 'otro']).optional(),
   "widthM": zod.number().gt(updateRoomBodyWidthMExclusiveMin).optional(),
   "lengthM": zod.number().gt(updateRoomBodyLengthMExclusiveMin).optional(),
@@ -216,6 +267,7 @@ export const UpdateRoomResponse = zod.object({
   "id": zod.int(),
   "projectId": zod.int(),
   "name": zod.string(),
+  "floor": zod.int().describe('Floor number: 1 = planta baja, 2 = segundo piso \/ mezzanine'),
   "kind": zod.enum(['habitacion', 'sala', 'cocina', 'bano', 'comedor', 'corredor', 'taller', 'otro']),
   "widthM": zod.number().describe('Width in meters'),
   "lengthM": zod.number().describe('Length in meters'),
@@ -255,7 +307,8 @@ export const GetProjectEstimateResponse = zod.object({
   "unit": zod.string(),
   "unitPrice": zod.number().describe('0 when the material is not in the catalog'),
   "subtotal": zod.number(),
-  "priced": zod.boolean().describe('False when no catalog price was found')
+  "priced": zod.boolean().describe('False when no catalog price was found'),
+  "formula": zod.string().optional().describe('Human-readable explanation (Spanish) of how the quantity was computed')
 })),
   "totalCost": zod.number()
 })

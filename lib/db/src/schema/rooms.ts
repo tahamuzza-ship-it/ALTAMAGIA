@@ -16,6 +16,7 @@ export const roomsTable = pgTable("rooms", {
     .references(() => projectsTable.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   kind: text("kind").notNull(),
+  floor: integer("floor").notNull().default(1),
   widthM: doublePrecision("width_m").notNull(),
   lengthM: doublePrecision("length_m").notNull(),
   heightM: doublePrecision("height_m").notNull(),

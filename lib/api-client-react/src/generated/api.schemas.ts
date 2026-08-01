@@ -46,6 +46,31 @@ export const ProjectStatus = {
   terminado: 'terminado',
 } as const;
 
+/**
+ * Ease of access to the terrain
+ * @nullable
+ */
+export type ProjectTerrainAccess = typeof ProjectTerrainAccess[keyof typeof ProjectTerrainAccess] | null;
+
+
+export const ProjectTerrainAccess = {
+  facil: 'facil',
+  medio: 'medio',
+  dificil: 'dificil',
+} as const;
+
+/**
+ * @nullable
+ */
+export type ProjectTerrainSlope = typeof ProjectTerrainSlope[keyof typeof ProjectTerrainSlope] | null;
+
+
+export const ProjectTerrainSlope = {
+  plano: 'plano',
+  pendiente_suave: 'pendiente_suave',
+  pendiente_fuerte: 'pendiente_fuerte',
+} as const;
+
 export interface Project {
   id: number;
   name: string;
@@ -59,6 +84,38 @@ export interface Project {
   status: ProjectStatus;
   /** @nullable */
   notes?: string | null;
+  /**
+     * Ease of access to the terrain
+     * @nullable
+     */
+  terrainAccess?: ProjectTerrainAccess;
+  /** @nullable */
+  terrainSlope?: ProjectTerrainSlope;
+  /**
+     * Distance to water source in meters
+     * @nullable
+     */
+  waterDistanceM?: number | null;
+  /**
+     * Whether the crew can stay on site
+     * @nullable
+     */
+  canStay?: boolean | null;
+  /**
+     * Whether the crew can cook on site
+     * @nullable
+     */
+  canCook?: boolean | null;
+  /**
+     * Number of people the house is for
+     * @nullable
+     */
+  numPeople?: number | null;
+  /**
+     * Target construction time in months
+     * @nullable
+     */
+  targetMonths?: number | null;
   createdAt: string;
 }
 
@@ -92,6 +149,24 @@ export const ProjectInputStatus = {
   terminado: 'terminado',
 } as const;
 
+export type ProjectInputTerrainAccess = typeof ProjectInputTerrainAccess[keyof typeof ProjectInputTerrainAccess];
+
+
+export const ProjectInputTerrainAccess = {
+  facil: 'facil',
+  medio: 'medio',
+  dificil: 'dificil',
+} as const;
+
+export type ProjectInputTerrainSlope = typeof ProjectInputTerrainSlope[keyof typeof ProjectInputTerrainSlope];
+
+
+export const ProjectInputTerrainSlope = {
+  plano: 'plano',
+  pendiente_suave: 'pendiente_suave',
+  pendiente_fuerte: 'pendiente_fuerte',
+} as const;
+
 export interface ProjectInput {
   /** @minLength 1 */
   name: string;
@@ -101,6 +176,13 @@ export interface ProjectInput {
   roofType: ProjectInputRoofType;
   status?: ProjectInputStatus;
   notes?: string;
+  terrainAccess?: ProjectInputTerrainAccess;
+  terrainSlope?: ProjectInputTerrainSlope;
+  waterDistanceM?: number;
+  canStay?: boolean;
+  canCook?: boolean;
+  numPeople?: number;
+  targetMonths?: number;
 }
 
 export type ProjectUpdateWallSystem = typeof ProjectUpdateWallSystem[keyof typeof ProjectUpdateWallSystem];
@@ -133,6 +215,30 @@ export const ProjectUpdateStatus = {
   terminado: 'terminado',
 } as const;
 
+/**
+ * @nullable
+ */
+export type ProjectUpdateTerrainAccess = typeof ProjectUpdateTerrainAccess[keyof typeof ProjectUpdateTerrainAccess] | null;
+
+
+export const ProjectUpdateTerrainAccess = {
+  facil: 'facil',
+  medio: 'medio',
+  dificil: 'dificil',
+} as const;
+
+/**
+ * @nullable
+ */
+export type ProjectUpdateTerrainSlope = typeof ProjectUpdateTerrainSlope[keyof typeof ProjectUpdateTerrainSlope] | null;
+
+
+export const ProjectUpdateTerrainSlope = {
+  plano: 'plano',
+  pendiente_suave: 'pendiente_suave',
+  pendiente_fuerte: 'pendiente_fuerte',
+} as const;
+
 export interface ProjectUpdate {
   /** @minLength 1 */
   name?: string;
@@ -145,6 +251,20 @@ export interface ProjectUpdate {
   status?: ProjectUpdateStatus;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  terrainAccess?: ProjectUpdateTerrainAccess;
+  /** @nullable */
+  terrainSlope?: ProjectUpdateTerrainSlope;
+  /** @nullable */
+  waterDistanceM?: number | null;
+  /** @nullable */
+  canStay?: boolean | null;
+  /** @nullable */
+  canCook?: boolean | null;
+  /** @nullable */
+  numPeople?: number | null;
+  /** @nullable */
+  targetMonths?: number | null;
 }
 
 export type RoomKind = typeof RoomKind[keyof typeof RoomKind];
@@ -165,6 +285,8 @@ export interface Room {
   id: number;
   projectId: number;
   name: string;
+  /** Floor number: 1 = planta baja, 2 = segundo piso / mezzanine */
+  floor: number;
   kind: RoomKind;
   /** Width in meters */
   widthM: number;
@@ -201,6 +323,11 @@ export const RoomInputKind = {
 export interface RoomInput {
   /** @minLength 1 */
   name: string;
+  /**
+     * @minimum 1
+     * @maximum 2
+     */
+  floor?: number;
   kind: RoomInputKind;
   /** @exclusiveMinimum 0 */
   widthM: number;
@@ -229,6 +356,11 @@ export const RoomUpdateKind = {
 export interface RoomUpdate {
   /** @minLength 1 */
   name?: string;
+  /**
+     * @minimum 1
+     * @maximum 2
+     */
+  floor?: number;
   kind?: RoomUpdateKind;
   /** @exclusiveMinimum 0 */
   widthM?: number;
@@ -326,6 +458,8 @@ export interface EstimateItem {
   subtotal: number;
   /** False when no catalog price was found */
   priced: boolean;
+  /** Human-readable explanation (Spanish) of how the quantity was computed */
+  formula?: string;
 }
 
 export interface Estimate {

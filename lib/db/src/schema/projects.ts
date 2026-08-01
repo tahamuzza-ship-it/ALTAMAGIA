@@ -1,4 +1,12 @@
-import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  doublePrecision,
+  integer,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -11,6 +19,13 @@ export const projectsTable = pgTable("projects", {
   roofType: text("roof_type").notNull(),
   status: text("status").notNull().default("diseno"),
   notes: text("notes"),
+  terrainAccess: text("terrain_access"),
+  terrainSlope: text("terrain_slope"),
+  waterDistanceM: doublePrecision("water_distance_m"),
+  canStay: boolean("can_stay"),
+  canCook: boolean("can_cook"),
+  numPeople: integer("num_people"),
+  targetMonths: doublePrecision("target_months"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

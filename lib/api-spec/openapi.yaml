@@ -353,6 +353,18 @@ components:
           type: string
           enum: [diseno, cotizado, construccion, terminado]
         notes: { type: ["string", "null"] }
+        terrainAccess:
+          type: ["string", "null"]
+          enum: [facil, medio, dificil, null]
+          description: Ease of access to the terrain
+        terrainSlope:
+          type: ["string", "null"]
+          enum: [plano, pendiente_suave, pendiente_fuerte, null]
+        waterDistanceM: { type: ["number", "null"], description: Distance to water source in meters }
+        canStay: { type: ["boolean", "null"], description: Whether the crew can stay on site }
+        canCook: { type: ["boolean", "null"], description: Whether the crew can cook on site }
+        numPeople: { type: ["integer", "null"], description: Number of people the house is for }
+        targetMonths: { type: ["number", "null"], description: Target construction time in months }
         createdAt: { type: string }
     ProjectInput:
       type: object
@@ -371,6 +383,17 @@ components:
           type: string
           enum: [diseno, cotizado, construccion, terminado]
         notes: { type: string }
+        terrainAccess:
+          type: string
+          enum: [facil, medio, dificil]
+        terrainSlope:
+          type: string
+          enum: [plano, pendiente_suave, pendiente_fuerte]
+        waterDistanceM: { type: number }
+        canStay: { type: boolean }
+        canCook: { type: boolean }
+        numPeople: { type: integer }
+        targetMonths: { type: number }
     ProjectUpdate:
       type: object
       properties:
@@ -387,13 +410,25 @@ components:
           type: string
           enum: [diseno, cotizado, construccion, terminado]
         notes: { type: ["string", "null"] }
+        terrainAccess:
+          type: ["string", "null"]
+          enum: [facil, medio, dificil, null]
+        terrainSlope:
+          type: ["string", "null"]
+          enum: [plano, pendiente_suave, pendiente_fuerte, null]
+        waterDistanceM: { type: ["number", "null"] }
+        canStay: { type: ["boolean", "null"] }
+        canCook: { type: ["boolean", "null"] }
+        numPeople: { type: ["integer", "null"] }
+        targetMonths: { type: ["number", "null"] }
     Room:
       type: object
-      required: [id, projectId, name, kind, widthM, lengthM, heightM]
+      required: [id, projectId, name, kind, widthM, lengthM, heightM, floor]
       properties:
         id: { type: integer }
         projectId: { type: integer }
         name: { type: string }
+        floor: { type: integer, description: "Floor number: 1 = planta baja, 2 = segundo piso / mezzanine" }
         kind:
           type: string
           enum: [habitacion, sala, cocina, bano, comedor, corredor, taller, otro]
@@ -407,6 +442,7 @@ components:
       required: [name, kind, widthM, lengthM, heightM]
       properties:
         name: { type: string, minLength: 1 }
+        floor: { type: integer, minimum: 1, maximum: 2, default: 1 }
         kind:
           type: string
           enum: [habitacion, sala, cocina, bano, comedor, corredor, taller, otro]
@@ -419,6 +455,7 @@ components:
       type: object
       properties:
         name: { type: string, minLength: 1 }
+        floor: { type: integer, minimum: 1, maximum: 2 }
         kind:
           type: string
           enum: [habitacion, sala, cocina, bano, comedor, corredor, taller, otro]
@@ -470,6 +507,7 @@ components:
         unitPrice: { type: number, description: 0 when the material is not in the catalog }
         subtotal: { type: number }
         priced: { type: boolean, description: False when no catalog price was found }
+        formula: { type: string, description: Human-readable explanation (Spanish) of how the quantity was computed }
     Estimate:
       type: object
       required: [projectId, floorAreaM2, wallAreaM2, roofAreaM2, items, totalCost]

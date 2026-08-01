@@ -7,6 +7,8 @@
  */
 import type { ProjectInputRoofType } from './projectInputRoofType';
 import type { ProjectInputStatus } from './projectInputStatus';
+import type { ProjectInputTerrainAccess } from './projectInputTerrainAccess';
+import type { ProjectInputTerrainSlope } from './projectInputTerrainSlope';
 import type { ProjectInputWallSystem } from './projectInputWallSystem';
 
 export interface ProjectInput {
@@ -18,4 +20,11 @@ export interface ProjectInput {
   roofType: ProjectInputRoofType;
   status?: ProjectInputStatus;
   notes?: string;
+  terrainAccess?: ProjectInputTerrainAccess;
+  terrainSlope?: ProjectInputTerrainSlope;
+  waterDistanceM?: number;
+  canStay?: boolean;
+  canCook?: boolean;
+  numPeople?: number;
+  targetMonths?: number;
 }

@@ -10,6 +10,11 @@ import type { RoomUpdateKind } from './roomUpdateKind';
 export interface RoomUpdate {
   /** @minLength 1 */
   name?: string;
+  /**
+     * @minimum 1
+     * @maximum 2
+     */
+  floor?: number;
   kind?: RoomUpdateKind;
   /** @exclusiveMinimum 0 */
   widthM?: number;
