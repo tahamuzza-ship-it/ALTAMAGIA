@@ -3,7 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, PointerLockControls, Sky, Text } from '@react-three/drei';
 import Scenery3D from './Scenery3D';
 import { Room } from '@workspace/api-client-react';
-import { Vector3 } from 'three';
+import { Vector3, BufferGeometry, BufferAttribute, DoubleSide } from 'three';
 import { Button } from '@/components/ui/button';
 import { Footprints, X } from 'lucide-react';
 
@@ -188,8 +188,41 @@ function Roof({ rooms, maxH1, maxH2, roofType }: { rooms: Room[], maxH1: number,
   const slopeLen = (roofSpan / 2) / Math.cos(angle);
   const actualH = (roofSpan / 2) * Math.tan(angle);
 
+  // Triángulo que tapa cada culata (extremo del techo) para que no se vea la "X".
+  // (Sin useMemo: este componente tiene returns tempranos antes de este punto,
+  // y los hooks no pueden ser condicionales. La geometría es diminuta.)
+  const gableGeom = (() => {
+    const g = new BufferGeometry();
+    const v = new Float32Array([
+      -roofSpan / 2, 0, 0,
+      roofSpan / 2, 0, 0,
+      0, actualH, 0,
+    ]);
+    g.setAttribute('position', new BufferAttribute(v, 3));
+    g.computeVertexNormals();
+    return g;
+  })();
+
+  const gableRot: [number, number, number] = isXLonger ? [0, Math.PI / 2, 0] : [0, 0, 0];
+  const gableEnds: [number, number, number][] = isXLonger
+    ? [[-(roofLen / 2 - 0.5), 0, 0], [roofLen / 2 - 0.5, 0, 0]]
+    : [[0, 0, -(roofLen / 2 - 0.5)], [0, 0, roofLen / 2 - 0.5]];
+
   return (
     <group position={[cx, totalH, cz]}>
+      {/* Culatas (tapas triangulares en los extremos) */}
+      {gableEnds.map((p, i) => (
+        <mesh key={`gable${i}`} position={p} rotation={gableRot}>
+          <primitive object={gableGeom} attach="geometry" />
+          <meshStandardMaterial color="#dfc9a4" roughness={1} side={DoubleSide} />
+        </mesh>
+      ))}
+
+      {/* Caballete de guadua a lo largo de la cumbrera */}
+      <mesh castShadow position={[0, actualH, 0]} rotation={isXLonger ? [0, 0, Math.PI / 2] : [Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.12, 0.12, roofLen + 0.3, 8]} />
+        <meshStandardMaterial color="#8a6a44" roughness={0.9} />
+      </mesh>
       {/* Pitch + */}
       <mesh castShadow receiveShadow 
             position={[0, actualH / 2, isXLonger ? roofSpan / 4 : 0]} 
@@ -266,7 +299,7 @@ function isTouchDevice(): boolean {
 
 type TouchInput = { move: { x: number, y: number }, look: { dx: number, dy: number } };
 
-function WalkControls({ boxes, start, eyeY, floor, onExit, touch, touchInput, rooms, onRoomChange }: { boxes: Box2D[], start: [number, number], eyeY: number, floor: number, onExit: () => void, touch: boolean, touchInput: React.MutableRefObject<TouchInput>, rooms: Room[], onRoomChange: (name: string | null) => void }) {
+function WalkControls({ boxes, start, eyeY, floor, touch, touchInput, rooms, onRoomChange }: { boxes: Box2D[], start: [number, number], eyeY: number, floor: number, touch: boolean, touchInput: React.MutableRefObject<TouchInput>, rooms: Room[], onRoomChange: (name: string | null) => void }) {
   const { camera } = useThree();
   const keys = useRef<Record<string, boolean>>({});
   const controlsRef = useRef<any>(null);
@@ -353,7 +386,8 @@ function WalkControls({ boxes, start, eyeY, floor, onExit, touch, touchInput, ro
   });
 
   if (touch) return null; // touch look is handled via drag overlay
-  return <PointerLockControls ref={controlsRef} onUnlock={onExit} />;
+  // Nota: soltar el mouse (ESC) NO cierra el recorrido — solo el botón "Salir".
+  return <PointerLockControls ref={controlsRef} />;
 }
 
 // Virtual joystick for touch movement
@@ -433,6 +467,7 @@ const tmpVec = new Vector3();
 export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { rooms: Room[], wallSystem: string, roofType: string }) {
   const [walkMode, setWalkMode] = useState(false);
   const [walkFloorState, setWalkFloor] = useState(1);
+  const [spawn, setSpawn] = useState<[number, number] | null>(null);
   const [currentRoom, setCurrentRoom] = useState<string | null>(null);
   const touch = useMemo(() => isTouchDevice(), []);
   const touchInput = useRef<TouchInput>({ move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 } });
@@ -505,7 +540,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
         </group>
 
         {walkMode ? (
-          <WalkControls boxes={collisionBoxes} start={walkStart} eyeY={walkEyeY} floor={walkFloor} onExit={() => { setWalkMode(false); setCurrentRoom(null); }} touch={touch} touchInput={touchInput} rooms={placedRooms} onRoomChange={setCurrentRoom} />
+          <WalkControls boxes={collisionBoxes} start={spawn ?? walkStart} eyeY={walkEyeY} floor={walkFloor} touch={touch} touchInput={touchInput} rooms={placedRooms} onRoomChange={setCurrentRoom} />
         ) : (
           <OrbitControls target={[center[0], maxH1 / 2, center[2]]} minDistance={5} maxDistance={50} maxPolarAngle={Math.PI / 2 - 0.05} />
         )}
@@ -529,7 +564,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
             </>
           )}
           <div className="absolute top-3 left-3 z-30 flex items-center gap-2">
-            <Button size="sm" variant="secondary" onClick={() => { setWalkMode(false); setCurrentRoom(null); }} className="shadow-md">
+            <Button size="sm" variant="secondary" onClick={() => { setWalkMode(false); setCurrentRoom(null); setSpawn(null); }} className="shadow-md">
               <X className="w-4 h-4 mr-1.5" /> Salir del recorrido
             </Button>
             {hasFloor2 && (
@@ -538,7 +573,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
                   size="sm"
                   variant={walkFloor === 1 ? 'default' : 'secondary'}
                   className="rounded-none"
-                  onClick={() => setWalkFloor(1)}
+                  onClick={() => { setWalkFloor(1); setSpawn(null); }}
                 >
                   Piso 1
                 </Button>
@@ -546,7 +581,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
                   size="sm"
                   variant={walkFloor === 2 ? 'default' : 'secondary'}
                   className="rounded-none"
-                  onClick={() => setWalkFloor(2)}
+                  onClick={() => { setWalkFloor(2); setSpawn(null); }}
                 >
                   Piso 2
                 </Button>
@@ -560,11 +595,29 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
               </div>
             </div>
           )}
+          {/* Ir directo a un espacio */}
+          <div className="absolute top-14 right-3 z-30 flex flex-col items-end gap-1.5 max-w-[45%]">
+            <div className="bg-black/60 text-white text-[11px] rounded px-2 py-0.5 backdrop-blur-sm">Ir a:</div>
+            {placedRooms.filter(r => r.floor === walkFloor).map(r => (
+              <Button
+                key={r.id}
+                size="sm"
+                variant="secondary"
+                className="h-7 text-xs shadow-md"
+                onClick={() => {
+                  setSpawn([(r.posX ?? 0) + r.widthM / 2, (r.posY ?? 0) + r.lengthM / 2]);
+                  setCurrentRoom(r.name);
+                }}
+              >
+                {r.name}
+              </Button>
+            ))}
+          </div>
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
             <div className="bg-black/60 text-white text-xs rounded-lg px-4 py-2 backdrop-blur-sm">
               {touch
                 ? 'Usa el joystick para caminar · Arrastra la pantalla para mirar'
-                : 'Haz clic en la escena para mirar con el mouse · WASD o flechas para caminar · ESC para soltar el mouse'}
+                : 'Haz clic en la escena para mirar con el mouse · WASD o flechas para caminar · ESC suelta el mouse (sin salir del recorrido)'}
             </div>
           </div>
           {/* Crosshair */}
