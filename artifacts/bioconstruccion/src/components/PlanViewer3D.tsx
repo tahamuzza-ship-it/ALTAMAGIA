@@ -1115,7 +1115,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
       {/* Overlay UI */}
       {!walkMode ? (
         <>
-        <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
+        <div className="absolute top-3 left-3 right-3 z-10 flex items-center gap-2 flex-wrap">
           {canWalk && (
             <Button size="sm" onClick={() => setWalkMode(true)} className="shadow-md">
               <Footprints className="w-4 h-4 mr-1.5" /> Recorrer
@@ -1145,7 +1145,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
           {touch && (
             <VirtualJoystick onChange={(x, y) => { touchInput.current.move.x = x; touchInput.current.move.y = y; }} />
           )}
-          <div className="absolute top-3 left-3 z-30 flex items-center gap-2">
+          <div className="absolute top-3 left-3 right-3 z-30 flex items-center gap-2 flex-wrap">
             <Button size="sm" variant="secondary" onClick={() => { setWalkMode(false); setCurrentRoom(null); setSpawn(null); }} className="shadow-md">
               <X className="w-4 h-4 mr-1.5" /> Salir del recorrido
             </Button>

@@ -865,7 +865,7 @@ export default function ProjectDetail() {
       </div>
 
       <Tabs defaultValue="plano" className="mt-8">
-        <TabsList className="grid w-full md:w-auto grid-cols-3 h-auto p-1 bg-muted/50">
+        <TabsList className="grid w-full md:w-auto grid-cols-1 sm:grid-cols-3 h-auto p-1 bg-muted/50">
           <TabsTrigger value="plano" className="py-2.5">Diseño de Planos</TabsTrigger>
           <TabsTrigger value="cotizacion" className="py-2.5">Cotización preliminar</TabsTrigger>
           <TabsTrigger value="cotizacion-final" className="py-2.5">Cotización final</TabsTrigger>
