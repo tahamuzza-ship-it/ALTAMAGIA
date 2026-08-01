@@ -494,9 +494,9 @@ function Roof({ rooms, maxH1, maxH2, roofType }: { rooms: Room[], maxH1: number,
         <cylinderGeometry args={[0.12, 0.12, roofLen + 0.3, 8]} />
         <meshStandardMaterial color="#8a6a44" roughness={0.9} />
       </mesh>
-      {/* Pitch + */}
+      {/* Pitch + (cada agua va desde el alero hasta la cumbrera, sin cruzarse) */}
       <mesh castShadow receiveShadow 
-            position={[0, actualH / 2, isXLonger ? roofSpan / 4 : 0]} 
+            position={[isXLonger ? 0 : roofSpan / 4, actualH / 2, isXLonger ? roofSpan / 4 : 0]} 
             rotation={[isXLonger ? angle : 0, 0, isXLonger ? 0 : -angle]}>
         <boxGeometry args={[isXLonger ? roofLen : slopeLen, 0.1, isXLonger ? slopeLen : roofLen]} />
         <meshStandardMaterial color={roofCol} roughness={0.8} />
@@ -504,7 +504,7 @@ function Roof({ rooms, maxH1, maxH2, roofType }: { rooms: Room[], maxH1: number,
       
       {/* Pitch - */}
       <mesh castShadow receiveShadow 
-            position={[0, actualH / 2, isXLonger ? -roofSpan / 4 : 0]} 
+            position={[isXLonger ? 0 : -roofSpan / 4, actualH / 2, isXLonger ? -roofSpan / 4 : 0]} 
             rotation={[isXLonger ? -angle : 0, 0, isXLonger ? 0 : angle]}>
         <boxGeometry args={[isXLonger ? roofLen : slopeLen, 0.1, isXLonger ? slopeLen : roofLen]} />
         <meshStandardMaterial color={roofCol} roughness={0.8} />
