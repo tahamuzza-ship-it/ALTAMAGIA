@@ -217,6 +217,175 @@ function PlanViewer({ rooms, selectedFloor, onRoomClick, onRoomDrop }: { rooms: 
 }
 
 
+function PlanViewer3D({ rooms, onRoomClick }: { rooms: Room[], onRoomClick: (r: Room) => void }) {
+  const padding = 3;
+  const cos30 = 0.866025;
+  const sin30 = 0.5;
+
+  const project = (x: number, y: number, z: number) => ({
+    x: (x - y) * cos30,
+    y: (x + y) * sin30 - z
+  });
+
+  const maxH1 = Math.max(2.5, ...rooms.filter(r => r.floor === 1).map(r => r.heightM), 0);
+
+  const rooms3D = rooms.map((r, i) => {
+    const x = r.posX ?? (i * 5);
+    const y = r.posY ?? 0;
+    const w = r.widthM;
+    const l = r.lengthM;
+    const h = r.heightM;
+    const z = r.floor === 2 ? maxH1 : 0;
+    return { ...r, x, y, z, w, l, h };
+  }).sort((a, b) => {
+    const depthA = a.x + a.y;
+    const depthB = b.x + b.y;
+    if (Math.abs(depthA - depthB) > 0.1) return depthA - depthB;
+    return a.floor - b.floor;
+  });
+
+  let minScreenX = Infinity, minScreenY = Infinity, maxScreenX = -Infinity, maxScreenY = -Infinity;
+  const addPt = (p: {x: number, y: number}) => {
+    minScreenX = Math.min(minScreenX, p.x); maxScreenX = Math.max(maxScreenX, p.x);
+    minScreenY = Math.min(minScreenY, p.y); maxScreenY = Math.max(maxScreenY, p.y);
+  };
+
+  rooms3D.forEach(r => {
+    addPt(project(r.x, r.y, r.z));
+    addPt(project(r.x+r.w, r.y, r.z));
+    addPt(project(r.x, r.y+r.l, r.z));
+    addPt(project(r.x+r.w, r.y+r.l, r.z));
+    addPt(project(r.x, r.y, r.z+r.h));
+    addPt(project(r.x+r.w, r.y, r.z+r.h));
+    addPt(project(r.x, r.y+r.l, r.z+r.h));
+    addPt(project(r.x+r.w, r.y+r.l, r.z+r.h));
+  });
+
+  const f1Rooms = rooms3D.filter(r => r.floor === 1);
+  let rMinX = Infinity, rMinY = Infinity, rMaxX = -Infinity, rMaxY = -Infinity;
+  if (f1Rooms.length > 0) {
+    f1Rooms.forEach(r => {
+      rMinX = Math.min(rMinX, r.x); rMaxX = Math.max(rMaxX, r.x + r.w);
+      rMinY = Math.min(rMinY, r.y); rMaxY = Math.max(rMaxY, r.y + r.l);
+    });
+    const roofH = 1.5;
+    const midY = (rMinY + rMaxY) / 2;
+    const midX = (rMinX + rMaxX) / 2;
+    addPt(project(rMinX, rMinY, maxH1));
+    addPt(project(rMaxX, rMaxY, maxH1));
+    addPt(project(rMinX, midY, maxH1 + roofH));
+    addPt(project(rMaxX, midY, maxH1 + roofH));
+    addPt(project(midX, rMinY, maxH1 + roofH));
+    addPt(project(midX, rMaxY, maxH1 + roofH));
+  }
+
+  if (minScreenX === Infinity) {
+    return (
+      <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-card rounded-xl border border-dashed border-border/60">
+        <p className="text-muted-foreground text-center">No hay espacios para renderizar en 3D.</p>
+      </div>
+    );
+  }
+
+  const vb = {
+    x: minScreenX - padding,
+    y: minScreenY - padding,
+    w: (maxScreenX - minScreenX) + padding * 2,
+    h: (maxScreenY - minScreenY) + padding * 2
+  };
+
+  return (
+    <div className="w-full h-full min-h-[500px] bg-card/50 rounded-xl border relative overflow-hidden flex items-center justify-center p-4">
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, black 1px, transparent 0)', backgroundSize: '20px 20px' }}></div>
+      <svg 
+        viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
+        className="w-full h-full max-h-[70vh] drop-shadow-md"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        {rooms3D.map(r => {
+          const t0 = project(r.x, r.y, r.z+r.h);
+          const tx = project(r.x+r.w, r.y, r.z+r.h);
+          const ty = project(r.x, r.y+r.l, r.z+r.h);
+          const txy = project(r.x+r.w, r.y+r.l, r.z+r.h);
+
+          const px = project(r.x+r.w, r.y, r.z);
+          const pxy = project(r.x+r.w, r.y+r.l, r.z);
+          const py = project(r.x, r.y+r.l, r.z);
+
+          const cx = (t0.x + tx.x + ty.x + txy.x) / 4;
+          const cy = (t0.y + tx.y + ty.y + txy.y) / 4;
+
+          return (
+            <g key={r.id} onClick={() => onRoomClick(r)} className="cursor-pointer group transition-all">
+              <polygon 
+                points={`${tx.x},${tx.y} ${px.x},${px.y} ${pxy.x},${pxy.y} ${txy.x},${txy.y}`}
+                className="fill-[#e8dcc7] stroke-[#d4c3ab] stroke-[0.05] group-hover:fill-[#e0d0b5] transition-colors"
+              />
+              <polygon 
+                points={`${ty.x},${ty.y} ${py.x},${py.y} ${pxy.x},${pxy.y} ${txy.x},${txy.y}`}
+                className="fill-[#d4c3ab] stroke-[#c0af98] stroke-[0.05] group-hover:fill-[#c9b49a] transition-colors"
+              />
+              <polygon 
+                points={`${t0.x},${t0.y} ${tx.x},${tx.y} ${txy.x},${txy.y} ${ty.x},${ty.y}`}
+                className="fill-[#f5ebd8] stroke-[#d4c3ab] stroke-[0.05] group-hover:fill-[#eee1ca] transition-colors"
+              />
+              <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" className="text-[0.4px] font-sans fill-[#73634e] font-medium pointer-events-none select-none">
+                {r.name}
+              </text>
+            </g>
+          )
+        })}
+
+        {f1Rooms.length > 0 && (() => {
+          const roofH = 1.5;
+          const isXLonger = (rMaxX - rMinX) >= (rMaxY - rMinY);
+
+          if (isXLonger) {
+            const midY = (rMinY + rMaxY) / 2;
+            const p1 = project(rMinX, rMinY, maxH1); 
+            const p2 = project(rMaxX, rMinY, maxH1); 
+            const p3 = project(rMaxX, rMaxY, maxH1); 
+            const p4 = project(rMinX, rMaxY, maxH1); 
+            const r1 = project(rMinX, midY, maxH1 + roofH); 
+            const r2 = project(rMaxX, midY, maxH1 + roofH); 
+
+            return (
+              <g className="pointer-events-none" style={{ mixBlendMode: 'multiply' }}>
+                <polygon points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${r2.x},${r2.y} ${r1.x},${r1.y}`} className="fill-[#b35e3b]/20 stroke-[#8c4a2e]/40 stroke-[0.05]" />
+                <polygon points={`${p4.x},${p4.y} ${p3.x},${p3.y} ${r2.x},${r2.y} ${r1.x},${r1.y}`} className="fill-[#994e2f]/40 stroke-[#8c4a2e]/40 stroke-[0.05]" />
+                <polygon points={`${p1.x},${p1.y} ${p4.x},${p4.y} ${r1.x},${r1.y}`} className="fill-[#cc6d45]/20 stroke-[#8c4a2e]/40 stroke-[0.05]" />
+                <polygon points={`${p2.x},${p2.y} ${p3.x},${p3.y} ${r2.x},${r2.y}`} className="fill-[#cc6d45]/40 stroke-[#8c4a2e]/40 stroke-[0.05]" />
+              </g>
+            );
+          } else {
+            const midX = (rMinX + rMaxX) / 2;
+            const p1 = project(rMinX, rMinY, maxH1); 
+            const p2 = project(rMaxX, rMinY, maxH1); 
+            const p3 = project(rMaxX, rMaxY, maxH1); 
+            const p4 = project(rMinX, rMaxY, maxH1); 
+            const r1 = project(midX, rMinY, maxH1 + roofH); 
+            const r2 = project(midX, rMaxY, maxH1 + roofH); 
+
+            return (
+              <g className="pointer-events-none" style={{ mixBlendMode: 'multiply' }}>
+                <polygon points={`${p1.x},${p1.y} ${p4.x},${p4.y} ${r2.x},${r2.y} ${r1.x},${r1.y}`} className="fill-[#b35e3b]/20 stroke-[#8c4a2e]/40 stroke-[0.05]" />
+                <polygon points={`${p2.x},${p2.y} ${p3.x},${p3.y} ${r2.x},${r2.y} ${r1.x},${r1.y}`} className="fill-[#994e2f]/40 stroke-[#8c4a2e]/40 stroke-[0.05]" />
+                <polygon points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${r1.x},${r1.y}`} className="fill-[#cc6d45]/20 stroke-[#8c4a2e]/40 stroke-[0.05]" />
+                <polygon points={`${p4.x},${p4.y} ${p3.x},${p3.y} ${r2.x},${r2.y}`} className="fill-[#cc6d45]/40 stroke-[#8c4a2e]/40 stroke-[0.05]" />
+              </g>
+            );
+          }
+        })()}
+      </svg>
+      <div className="absolute bottom-4 right-4 bg-background/80 backdrop-blur border text-xs px-3 py-1.5 rounded-md text-muted-foreground flex items-center gap-2">
+        <Maximize className="w-3 h-3" />
+        Vista Isométrica
+      </div>
+    </div>
+  );
+}
+
+
 export default function ProjectDetail() {
   const [, params] = useRoute("/proyectos/:id");
   const projectId = Number(params?.id);
@@ -238,6 +407,7 @@ export default function ProjectDetail() {
   
   const [terrainDialogOpen, setTerrainDialogOpen] = useState(false);
   const [selectedFloor, setSelectedFloor] = useState<number>(1);
+  const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
 
   const roomForm = useForm<z.infer<typeof roomSchema>>({
     resolver: zodResolver(roomSchema),
@@ -552,18 +722,30 @@ export default function ProjectDetail() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <Card className="h-full border-muted-foreground/20 shadow-sm overflow-hidden flex flex-col">
-                <CardHeader className="bg-muted/30 pb-4 border-b flex-row items-center justify-between space-y-0">
+                <CardHeader className="bg-muted/30 pb-4 border-b flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
                   <div>
-                    <CardTitle>Plano Arquitectónico 2D</CardTitle>
-                    <CardDescription>Haz clic para editar. Arrastra para mover (ajuste a 0.5m).</CardDescription>
+                    <CardTitle>{viewMode === "2d" ? "Plano Arquitectónico 2D" : "Vista Isométrica 3D"}</CardTitle>
+                    <CardDescription>{viewMode === "2d" ? "Haz clic para editar. Arrastra para mover (ajuste a 0.5m)." : "Explora los volúmenes del diseño. Haz clic para editar."}</CardDescription>
                   </div>
-                  <div className="flex bg-background border rounded-lg p-1">
-                    <Button variant={selectedFloor === 1 ? "secondary" : "ghost"} size="sm" onClick={() => setSelectedFloor(1)} className="h-7 text-xs px-3">
-                      Piso 1
-                    </Button>
-                    <Button variant={selectedFloor === 2 ? "secondary" : "ghost"} size="sm" onClick={() => setSelectedFloor(2)} className="h-7 text-xs px-3">
-                      Piso 2
-                    </Button>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex bg-background border rounded-lg p-1">
+                      <Button variant={viewMode === "2d" ? "secondary" : "ghost"} size="sm" onClick={() => setViewMode("2d")} className="h-7 text-xs px-3">
+                        Plano 2D
+                      </Button>
+                      <Button variant={viewMode === "3d" ? "secondary" : "ghost"} size="sm" onClick={() => setViewMode("3d")} className="h-7 text-xs px-3">
+                        Vista 3D
+                      </Button>
+                    </div>
+                    {viewMode === "2d" && (
+                      <div className="flex bg-background border rounded-lg p-1">
+                        <Button variant={selectedFloor === 1 ? "secondary" : "ghost"} size="sm" onClick={() => setSelectedFloor(1)} className="h-7 text-xs px-3">
+                          Piso 1
+                        </Button>
+                        <Button variant={selectedFloor === 2 ? "secondary" : "ghost"} size="sm" onClick={() => setSelectedFloor(2)} className="h-7 text-xs px-3">
+                          Piso 2
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="p-0 flex-1">
@@ -571,6 +753,8 @@ export default function ProjectDetail() {
                     <div className="flex items-center justify-center min-h-[500px]">
                       <Loader2 className="w-8 h-8 animate-spin text-primary" />
                     </div>
+                  ) : viewMode === "3d" ? (
+                    <PlanViewer3D rooms={rooms || []} onRoomClick={handleOpenEditRoom} />
                   ) : (
                     <PlanViewer rooms={rooms || []} selectedFloor={selectedFloor} onRoomClick={handleOpenEditRoom} onRoomDrop={onRoomDrop} />
                   )}
