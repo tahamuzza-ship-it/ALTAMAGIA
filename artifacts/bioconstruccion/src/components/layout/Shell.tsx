@@ -14,7 +14,7 @@ export function Sidebar() {
   return (
     <aside
       className="w-64 border-r flex-shrink-0 hidden md:flex flex-col relative bg-cover bg-center"
-      style={{ backgroundImage: `url(${burritoCampo})` }}
+      style={{ backgroundImage: `url(${burritoCampo})`, backgroundPosition: "0% 60%" }}
     >
       {/* Velo claro para que el texto se lea sobre la foto */}
       <div className="absolute inset-0 bg-card/35" />
