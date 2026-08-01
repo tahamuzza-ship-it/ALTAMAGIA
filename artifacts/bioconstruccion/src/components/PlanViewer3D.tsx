@@ -5,7 +5,7 @@ import Scenery3D from './Scenery3D';
 import { Room } from '@workspace/api-client-react';
 import { Vector3, BufferGeometry, BufferAttribute, DoubleSide } from 'three';
 import { Button } from '@/components/ui/button';
-import { Footprints, X } from 'lucide-react';
+import { Footprints, X, Info } from 'lucide-react';
 
 const wallColors: Record<string, string> = {
   bahareque: '#dfc9a4', // revoque de tierra claro
@@ -119,6 +119,71 @@ function WallWithDoor({ axis, cx, cz, span, baseZ, h, hBot, cBot, cTop, withWind
         </mesh>
       ))}
     </group>
+  );
+}
+
+// Panel educativo: explica el modelo desde la bioconstrucción y las propiedades de los materiales
+function InfoBioconstruccion({ wallSystem, onClose }: { wallSystem: string, onClose: () => void }) {
+  const muros: Record<string, { titulo: string, texto: string }> = {
+    bahareque: {
+      titulo: 'Muros de bahareque',
+      texto: 'Esqueleto de guadua relleno y revocado con tierra. Es liviano y flexible: en un temblor la pared se mueve y disipa la energía en vez de agrietarse. La tierra del revoque "respira": absorbe humedad cuando el aire está húmedo y la suelta cuando está seco.',
+    },
+    adobe: {
+      titulo: 'Muros de adobe',
+      texto: 'Bloques de tierra cruda secados al sol. Su gran masa guarda el calor del día y lo suelta en la noche (inercia térmica): la casa se mantiene fresca al mediodía y tibia de madrugada, sin aire acondicionado ni calefacción.',
+    },
+    tapia_pisada: {
+      titulo: 'Muros de tapia pisada',
+      texto: 'Tierra compactada por capas dentro de un molde, formando muros gruesos y macizos. Son los de mayor inercia térmica y aislamiento acústico: temperatura estable todo el día y mucho silencio adentro.',
+    },
+    mixta: {
+      titulo: 'Muros mixtos (dos franjas)',
+      texto: 'La franja baja es de tierra maciza (adobe o tapia): aporta masa térmica y aguanta mejor los golpes y la humedad cerca del piso. La franja alta es de bahareque: liviana, para no cargar de peso la parte superior — clave en zona sísmica.',
+    },
+  };
+  const muro = muros[wallSystem] ?? muros.bahareque;
+  const S = ({ t, children }: { t: string, children: React.ReactNode }) => (
+    <div className="mb-3">
+      <p className="font-semibold text-sm mb-0.5">{t}</p>
+      <p className="text-sm text-muted-foreground leading-relaxed">{children}</p>
+    </div>
+  );
+  return (
+    <div className="absolute top-14 right-3 bottom-3 z-30 w-[340px] max-w-[85vw] bg-background/95 backdrop-blur rounded-lg shadow-lg border overflow-y-auto p-4">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-bold text-base">Así funciona esta casa</h3>
+        <Button size="icon" variant="ghost" onClick={onClose}><X className="w-4 h-4" /></Button>
+      </div>
+      <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+        Este modelo sigue los principios de la bioconstrucción: materiales naturales del lugar, poca energía para producirlos y una casa que regula sola su temperatura y humedad.
+      </p>
+      <S t="Sobrecimiento de piedra (la base gris)">
+        Son las "botas" de la casa: levantan los muros de tierra del suelo para que la humedad y el salpique de la lluvia no los deterioren. La tierra es durable siempre que tenga "buenas botas y buen sombrero".
+      </S>
+      <S t="Columnas y estructura de guadua">
+        La guadua es el "acero vegetal": por su forma de tubo resiste muchísimo en relación a su peso, crece en 4–6 años (madera fina tarda décadas) y es liviana, ideal para zonas sísmicas.
+      </S>
+      <S t={muro.titulo}>{muro.texto}</S>
+      <S t="Entrepiso del altillo en guadua y esterilla">
+        En vez de una plancha de concreto (costosa y pesada), el altillo se arma con vigas de guadua y esterilla: mucho más liviano, económico y de rápida construcción.
+      </S>
+      <S t='El "sombrero": techo a dos aguas con aleros'>
+        La pendiente evacúa la lluvia rápido hacia los aleros, que alejan el agua y el sol de los muros de tierra. En los bordes se ponen canaletas para recoger el agua lluvia y reutilizarla.
+      </S>
+      <S t="Techo cruzado (X): cumbrera ventilada">
+        Cuando un agua del techo se pasa por encima de la otra, queda una rendija protegida en la cumbrera: por ahí sale el aire caliente y el humo de la chimenea sin que entre la lluvia. Enfría la casa de forma natural, sin ventiladores.
+      </S>
+      <S t="Chimenea con hogar de piedra">
+        La piedra y la tierra alrededor del fuego acumulan calor y lo van soltando lento durante la noche (masa térmica). El ducto saca el humo por encima del techo para que tire bien.
+      </S>
+      <S t="Ventanas enfrentadas: ventilación cruzada">
+        Al abrir ventanas en paredes opuestas, el viento atraviesa la casa y renueva el aire. Junto con los muros que "respiran", evita moho y sofoco.
+      </S>
+      <p className="text-xs text-muted-foreground mt-2">
+        Con buen mantenimiento (botas y sombrero en buen estado), una casa de tierra y guadua puede durar más de 100 años — y al final de su vida sus materiales vuelven a la tierra sin contaminar.
+      </p>
+    </div>
   );
 }
 
@@ -820,6 +885,7 @@ function LookPad({ lookRef }: { lookRef: React.MutableRefObject<TouchInput> }) {
 export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { rooms: Room[], wallSystem: string, roofType: string }) {
   const [walkMode, setWalkMode] = useState(false);
   const [roofMode, setRoofMode] = useState<'cerrado' | 'cruzado' | 'abierto'>('cerrado');
+  const [showInfo, setShowInfo] = useState(false);
   const [walkFloorState, setWalkFloor] = useState(1);
   const [spawn, setSpawn] = useState<[number, number] | null>(null);
   const [currentRoom, setCurrentRoom] = useState<string | null>(null);
@@ -951,6 +1017,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
 
       {/* Overlay UI */}
       {!walkMode ? (
+        <>
         <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
           {canWalk && (
             <Button size="sm" onClick={() => setWalkMode(true)} className="shadow-md">
@@ -966,7 +1033,12 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
           <Button size="sm" variant={roofMode === 'abierto' ? 'default' : 'secondary'} onClick={() => setRoofMode('abierto')} className="shadow-md">
             Sin techo
           </Button>
+          <Button size="sm" variant="secondary" onClick={() => setShowInfo(v => !v)} className="shadow-md">
+            <Info className="w-4 h-4 mr-1.5" /> ¿Por qué así?
+          </Button>
         </div>
+        {showInfo && <InfoBioconstruccion wallSystem={wallSystem} onClose={() => setShowInfo(false)} />}
+        </>
       ) : (
         <>
           <LookPad lookRef={touchInput} />
