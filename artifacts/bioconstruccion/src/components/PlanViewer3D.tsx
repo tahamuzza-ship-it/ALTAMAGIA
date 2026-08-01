@@ -25,23 +25,68 @@ const EYE_HEIGHT = 1.6;
 const PLAYER_RADIUS = 0.3;
 const WALK_SPEED = 3.0; // m/s
 const WALL_T = 0.2;
-const DOOR_WIDTH = 1.0; // opening left in each wall so the player can move between spaces
+const DOOR_WIDTH = 1.2; // opening left in each wall so the player can move between spaces
 
 type Box2D = { minX: number, maxX: number, minZ: number, maxZ: number };
 
-function Wall({ position, args, color, hasWindow = false }: { position: [number, number, number], args: [number, number, number], color: string, hasWindow?: boolean }) {
+const DOOR_H = 2.05; // door opening height
+
+/**
+ * One wall with a VISIBLE centered door opening that matches the collision
+ * gaps in buildCollisionBoxes, so what you see is where you can walk.
+ * Renders: two side segments (with color bands for mixta), a lintel above
+ * the door, guadua door-frame posts, and optional windows.
+ */
+function WallWithDoor({ axis, cx, cz, span, baseZ, h, hBot, cBot, cTop, withWindows }: {
+  axis: 'x' | 'z', cx: number, cz: number, span: number, baseZ: number,
+  h: number, hBot: number, cBot: string, cTop: string, withWindows: boolean,
+}) {
+  const t = WALL_T;
+  const gap = Math.min(DOOR_WIDTH, span * 0.5);
+  const seg = (span - gap) / 2;
+  if (seg <= 0.01) return null;
+  const doorH = Math.min(DOOR_H, h - 0.2);
+  const offs = [-(gap + seg) / 2, (gap + seg) / 2];
+  const hTop = h - hBot;
+  const bands = [
+    { y: baseZ + hBot / 2, hgt: hBot, c: cBot },
+    ...(hTop > 0.01 ? [{ y: baseZ + hBot + hTop / 2, hgt: hTop, c: cTop }] : []),
+  ];
+  const pos = (o: number): [number, number, number] =>
+    axis === 'x' ? [cx + o, 0, cz] : [cx, 0, cz + o];
+  const dims = (len: number, hgt: number): [number, number, number] =>
+    axis === 'x' ? [len, hgt, t] : [t, hgt, len];
   return (
-    <group position={position}>
-      <mesh castShadow receiveShadow>
-        <boxGeometry args={args} />
-        <meshStandardMaterial color={color} roughness={1} />
-      </mesh>
-      {hasWindow && (
-        <mesh position={[0, 0, 0]}>
-          <boxGeometry args={[args[0] > args[2] ? args[0] * 0.4 : args[0] + 0.05, args[1] * 0.5, args[0] > args[2] ? args[2] + 0.05 : args[2] * 0.4]} />
+    <group>
+      {offs.map((o, i) =>
+        bands.map((b, j) => (
+          <mesh key={`${i}-${j}`} castShadow receiveShadow position={[pos(o)[0], b.y, pos(o)[2]]}>
+            <boxGeometry args={dims(seg, b.hgt)} />
+            <meshStandardMaterial color={b.c} roughness={1} />
+          </mesh>
+        ))
+      )}
+      {/* Ventanas en los segmentos laterales */}
+      {withWindows && seg > 1.2 && offs.map((o, i) => (
+        <mesh key={`win${i}`} position={[pos(o)[0], baseZ + Math.max(hBot + 0.2, h * 0.45) + 0.35, pos(o)[2]]}>
+          <boxGeometry args={dims(seg * 0.5, Math.min(0.9, h * 0.3))} />
           <meshStandardMaterial color="#2a3b4c" roughness={0.1} metalness={0.8} />
         </mesh>
+      ))}
+      {/* Dintel sobre la puerta */}
+      {h - doorH > 0.05 && (
+        <mesh castShadow position={[cx, baseZ + doorH + (h - doorH) / 2, cz]}>
+          <boxGeometry args={dims(gap, h - doorH)} />
+          <meshStandardMaterial color={doorH >= hBot ? cTop : cBot} roughness={1} />
+        </mesh>
       )}
+      {/* Marco de guadua de la puerta */}
+      {[-gap / 2, gap / 2].map((g, i) => (
+        <mesh key={`frame${i}`} castShadow position={[pos(g)[0], baseZ + doorH / 2, pos(g)[2]]}>
+          <cylinderGeometry args={[0.05, 0.06, doorH, 6]} />
+          <meshStandardMaterial color="#9aa25c" roughness={0.8} />
+        </mesh>
+      ))}
     </group>
   );
 }
@@ -66,14 +111,6 @@ function Room3D({ room, maxH1, wallSystem }: { room: Room, maxH1: number, wallSy
   const hBot = isMixta ? Math.min(1.2, h) : h;
   const hTop = Math.max(0, h - hBot);
 
-  const renderWalls = (height: number, yCenter: number, color: string, addWindows: boolean) => (
-    <React.Fragment key={`${height}-${yCenter}`}>
-      <Wall position={[x, yCenter, z - l/2 + t/2]} args={[w, height, t]} color={color} hasWindow={addWindows && w > 1.5} />
-      <Wall position={[x, yCenter, z + l/2 - t/2]} args={[w, height, t]} color={color} hasWindow={addWindows && w > 1.5} />
-      <Wall position={[x - w/2 + t/2, yCenter, z]} args={[t, height, l - t*2]} color={color} hasWindow={addWindows && l > 1.5} />
-      <Wall position={[x + w/2 - t/2, yCenter, z]} args={[t, height, l - t*2]} color={color} hasWindow={addWindows && l > 1.5} />
-    </React.Fragment>
-  );
 
   return (
     <group>
@@ -99,9 +136,11 @@ function Room3D({ room, maxH1, wallSystem }: { room: Room, maxH1: number, wallSy
         </mesh>
       ))}
       
-      {/* Walls */}
-      {renderWalls(hBot, baseZ + hBot/2, cBot, false)}
-      {hTop > 0 && renderWalls(hTop, baseZ + hBot + hTop/2, cTop, true)}
+      {/* Walls — cada pared tiene su vano de puerta visible */}
+      <WallWithDoor axis="x" cx={x} cz={z - l / 2 + t / 2} span={w} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} withWindows={w > 2.4} />
+      <WallWithDoor axis="x" cx={x} cz={z + l / 2 - t / 2} span={w} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} withWindows={w > 2.4} />
+      <WallWithDoor axis="z" cx={x - w / 2 + t / 2} cz={z} span={l} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} withWindows={l > 2.4} />
+      <WallWithDoor axis="z" cx={x + w / 2 - t / 2} cz={z} span={l} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} withWindows={l > 2.4} />
 
       {/* Label */}
       <Text 
