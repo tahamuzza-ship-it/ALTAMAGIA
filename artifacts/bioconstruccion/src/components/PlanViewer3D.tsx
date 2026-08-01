@@ -1009,6 +1009,10 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
               <Text position={[entrada.backX, 2.4, entrada.backZ + 0.4]} fontSize={0.34} color="#1a2e20" anchorX="center" anchorY="middle">
                 Parte trasera
               </Text>
+              {/* Letrero del sobrecimiento de piedra */}
+              <Text position={[entrada.x + 2.2, 0.62, entrada.z - 0.25]} fontSize={0.26} color="#4a4238" anchorX="center" anchorY="middle" rotation={[0, Math.PI, 0]}>
+                Bases en piedra (30 cm)
+              </Text>
             </>
           )}
           {/* En el recorrido se quita el techo para ver la casa por dentro desde arriba */}
