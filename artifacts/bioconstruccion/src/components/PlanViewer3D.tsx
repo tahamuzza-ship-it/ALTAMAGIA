@@ -979,7 +979,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
   return (
     <div className="relative w-full h-full min-h-[500px]">
       <Canvas shadows camera={{ position: [center[0] + 15, 15, center[2] + 15], fov: 45 }} className="!absolute inset-0">
-        <Sky sunPosition={[10, 20, 10]} turbidity={0.1} rayleigh={0.5} />
+        <Sky sunPosition={[10, 40, 10]} turbidity={0.05} rayleigh={2.2} mieCoefficient={0.002} mieDirectionalG={0.7} />
         <ambientLight intensity={0.6} />
         <directionalLight 
           castShadow 
@@ -1014,16 +1014,28 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
               <Text position={[entrada.backX, 2.4, entrada.backZ + 0.4]} fontSize={0.34} color="#1a2e20" anchorX="center" anchorY="middle">
                 Parte trasera
               </Text>
-              {/* Letrero del sobrecimiento de piedra: en los cuatro frentes */}
+              {/* Letrero del sobrecimiento de piedra: tabla de madera en los cuatro frentes */}
               {[
-                { p: [entrada.midX, 0.62, entrada.z - 0.3] as [number, number, number], rotY: Math.PI },
-                { p: [entrada.midX, 0.62, entrada.backZ + 0.3] as [number, number, number], rotY: 0 },
-                { p: [entrada.minX - 0.3, 0.62, entrada.midZ] as [number, number, number], rotY: -Math.PI / 2 },
-                { p: [entrada.maxX + 0.3, 0.62, entrada.midZ] as [number, number, number], rotY: Math.PI / 2 },
+                { p: [entrada.midX, 0, entrada.z - 0.45] as [number, number, number], rotY: Math.PI },
+                { p: [entrada.midX, 0, entrada.backZ + 0.45] as [number, number, number], rotY: 0 },
+                { p: [entrada.minX - 0.45, 0, entrada.midZ] as [number, number, number], rotY: -Math.PI / 2 },
+                { p: [entrada.maxX + 0.45, 0, entrada.midZ] as [number, number, number], rotY: Math.PI / 2 },
               ].map((l, i) => (
-                <Text key={`piedra${i}`} position={l.p} fontSize={0.32} color="#120d07" outlineWidth={0.01} outlineColor="#f5efe2" anchorX="center" anchorY="middle" rotation={[0, l.rotY, 0]}>
-                  Bases en piedra (30 cm)
-                </Text>
+                <group key={`piedra${i}`} position={l.p} rotation={[0, l.rotY, 0]}>
+                  {/* estaca */}
+                  <mesh castShadow position={[0, 0.35, 0.03]}>
+                    <cylinderGeometry args={[0.035, 0.045, 0.7, 6]} />
+                    <meshStandardMaterial color="#7a5230" roughness={0.9} />
+                  </mesh>
+                  {/* tabla */}
+                  <mesh castShadow position={[0, 0.72, 0]}>
+                    <boxGeometry args={[2.6, 0.5, 0.05]} />
+                    <meshStandardMaterial color="#f2e7cf" roughness={0.9} />
+                  </mesh>
+                  <Text position={[0, 0.72, 0.032]} fontSize={0.3} color="#241a0e" anchorX="center" anchorY="middle">
+                    Bases en piedra (30 cm)
+                  </Text>
+                </group>
               ))}
             </>
           )}
