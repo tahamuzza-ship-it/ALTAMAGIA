@@ -132,7 +132,79 @@ function Baranda({ axis, cx, cz, span, baseZ }: { axis: 'x' | 'z', cx: number, c
   );
 }
 
-function Room3D({ room, maxH1, wallSystem }: { room: Room, maxH1: number, wallSystem: string }) {
+// Chimenea: hogar de piedra + ducto que sube y sale por el techo
+function Chimenea({ x0, zc, maxH1 }: { x0: number, zc: number, maxH1: number }) {
+  const ductH = maxH1 + 0.7; // el ducto arranca sobre el hogar (1.5 m) y sube hasta maxH1+2.2
+  return (
+    <group position={[x0 + 0.45, 0, zc]}>
+      {/* hogar de piedra */}
+      <mesh castShadow position={[0, 0.75, 0]}>
+        <boxGeometry args={[0.7, 1.5, 1.4]} />
+        <meshStandardMaterial color="#857c6e" roughness={1} />
+      </mesh>
+      {/* boca del hogar */}
+      <mesh position={[0.36, 0.55, 0]}>
+        <boxGeometry args={[0.02, 0.8, 0.9]} />
+        <meshStandardMaterial color="#1c130c" roughness={1} />
+      </mesh>
+      {/* fuego */}
+      <mesh position={[0.3, 0.35, 0]}>
+        <boxGeometry args={[0.15, 0.35, 0.6]} />
+        <meshStandardMaterial color="#ff7a2f" emissive="#ff5500" emissiveIntensity={1.4} />
+      </mesh>
+      <pointLight position={[0.5, 0.6, 0]} color="#ff8844" intensity={1.2} distance={4} />
+      {/* ducto */}
+      <mesh castShadow position={[0, 1.5 + ductH / 2, 0]}>
+        <boxGeometry args={[0.55, ductH, 0.7]} />
+        <meshStandardMaterial color="#8a7f70" roughness={1} />
+      </mesh>
+      {/* corona */}
+      <mesh castShadow position={[0, 1.5 + ductH + 0.08, 0]}>
+        <boxGeometry args={[0.75, 0.16, 0.9]} />
+        <meshStandardMaterial color="#6f665a" roughness={1} />
+      </mesh>
+    </group>
+  );
+}
+
+// Escalera de madera y guadua que sube al altillo por el lado de la sala
+function Escalera({ x, zStart, rise, run }: { x: number, zStart: number, rise: number, run: number }) {
+  const n = Math.max(8, Math.round(rise / 0.19));
+  const stepR = rise / n;
+  const stepD = run / n;
+  const railLen = Math.hypot(rise, run) + 0.5;
+  const railRotX = Math.atan2(run, rise);
+  return (
+    <group>
+      {Array.from({ length: n }, (_, i) => (
+        <mesh key={i} castShadow receiveShadow position={[x, (i + 0.5) * stepR, zStart + (i + 0.5) * stepD]}>
+          <boxGeometry args={[0.9, stepR, stepD]} />
+          <meshStandardMaterial color="#b08c5f" roughness={1} />
+        </mesh>
+      ))}
+      {/* pasamanos de guadua */}
+      {[-0.42, 0.42].map((o, i) => (
+        <mesh key={`h${i}`} castShadow position={[x + o, rise / 2 + 0.85, zStart + run / 2]} rotation={[railRotX, 0, 0]}>
+          <cylinderGeometry args={[0.045, 0.045, railLen, 6]} />
+          <meshStandardMaterial color="#9aa25c" roughness={0.8} />
+        </mesh>
+      ))}
+      {/* parales del pasamanos */}
+      {[0.15, 0.5, 0.85].map((t01, i) => (
+        [-0.42, 0.42].map((o, j) => (
+          <mesh key={`p${i}-${j}`} castShadow position={[x + o, t01 * rise + 0.45, zStart + t01 * run]}>
+            <cylinderGeometry args={[0.035, 0.045, 0.9, 6]} />
+            <meshStandardMaterial color="#9aa25c" roughness={0.8} />
+          </mesh>
+        ))
+      ))}
+    </group>
+  );
+}
+
+type HoleRect = { minX: number, maxX: number, minZ: number, maxZ: number };
+
+function Room3D({ room, maxH1, wallSystem, stairHole }: { room: Room, maxH1: number, wallSystem: string, stairHole?: HoleRect }) {
   const isFloor2 = room.floor === 2;
   const baseZ = isFloor2 ? maxH1 : 0;
   
@@ -158,11 +230,35 @@ function Room3D({ room, maxH1, wallSystem }: { room: Room, maxH1: number, wallSy
     const nBeams = Math.max(2, Math.round(w / 1) + 1);
     return (
       <group>
-        {/* Tablero del entrepiso (esterilla/madera) */}
-        <mesh position={[x, floorY, z]} receiveShadow castShadow>
-          <boxGeometry args={[w, 0.08, l]} />
-          <meshStandardMaterial color="#b08c5f" roughness={1} />
-        </mesh>
+        {/* Tablero del entrepiso (esterilla/madera) — con hueco para la escalera */}
+        {(() => {
+          const x0 = room.posX ?? 0;
+          const z0 = room.posY ?? 0;
+          const x1 = x0 + w;
+          const z1 = z0 + l;
+          const hle = stairHole && stairHole.minX < x1 && stairHole.maxX > x0 && stairHole.minZ < z1 && stairHole.maxZ > z0
+            ? {
+                minX: Math.max(stairHole.minX, x0), maxX: Math.min(stairHole.maxX, x1),
+                minZ: Math.max(stairHole.minZ, z0), maxZ: Math.min(stairHole.maxZ, z1),
+              }
+            : null;
+          const rects: [number, number, number, number][] = hle
+            ? [
+                [x0, hle.minX, z0, z1],
+                [hle.maxX, x1, z0, z1],
+                [hle.minX, hle.maxX, z0, hle.minZ],
+                [hle.minX, hle.maxX, hle.maxZ, z1],
+              ]
+            : [[x0, x1, z0, z1]];
+          return rects
+            .filter(([a, b, c, d]) => b - a > 0.02 && d - c > 0.02)
+            .map(([a, b, c, d], i) => (
+              <mesh key={`deck${i}`} position={[(a + b) / 2, floorY, (c + d) / 2]} receiveShadow castShadow>
+                <boxGeometry args={[b - a, 0.08, d - c]} />
+                <meshStandardMaterial color="#b08c5f" roughness={1} />
+              </mesh>
+            ));
+        })()}
         {/* Vigas de guadua debajo del entrepiso */}
         {Array.from({ length: nBeams }, (_, i) => {
           const t01 = nBeams === 1 ? 0 : i / (nBeams - 1) - 0.5;
@@ -206,6 +302,11 @@ function Room3D({ room, maxH1, wallSystem }: { room: Room, maxH1: number, wallSy
           <boxGeometry args={[w + 0.08, 0.3, l + 0.08]} />
           <meshStandardMaterial color="#857c6e" roughness={1} />
         </mesh>
+      )}
+
+      {/* Chimenea en la sala */}
+      {(room.kind === 'sala' || /chimenea/i.test(room.name)) && (
+        <Chimenea x0={(room.posX ?? 0)} zc={z} maxH1={maxH1} />
       )}
 
       {/* Columnas de guadua en las esquinas — solo piso 1 */}
@@ -347,9 +448,14 @@ function Roof({ rooms, maxH1, maxH2, roofType }: { rooms: Room[], maxH1: number,
  * Each wall gets a centered gap (DOOR_WIDTH) so the walkthrough can pass
  * between rooms and enter from outside — simple collision, not full doors.
  */
-function buildCollisionBoxes(rooms: Room[], floor: number): Box2D[] {
+function buildCollisionBoxes(rooms: Room[], floor: number, stairHole?: HoleRect): Box2D[] {
   const boxes: Box2D[] = [];
   const t = WALL_T;
+
+  // En el piso 2, el hueco de la escalera no es transitable
+  if (floor === 2 && stairHole) {
+    boxes.push({ ...stairHole });
+  }
 
   rooms.filter(r => r.floor === floor).forEach(room => {
     const w = room.widthM;
@@ -665,7 +771,28 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
   const hasFloor2 = placedRooms.some(r => r.floor === 2);
   const walkFloor = hasFloor2 ? walkFloorState : 1;
 
-  const collisionBoxes = useMemo(() => buildCollisionBoxes(placedRooms, walkFloor), [placedRooms, walkFloor]);
+  // Escalera al altillo: sube por dentro del espacio del piso 1 que queda debajo,
+  // pegada al borde derecho del altillo, con hueco en el entrepiso donde desemboca.
+  const stair = useMemo(() => {
+    const alt = placedRooms.find(r => r.floor === 2);
+    if (!alt) return null;
+    const ax0 = alt.posX ?? 0;
+    const az0 = alt.posY ?? 0;
+    const ax1 = ax0 + alt.widthM;
+    const x = ax1 - WALL_T - 0.55; // separada de la pared del piso 1
+    const rise = maxH1 + 0.1;
+    const run = Math.min(3.6, alt.lengthM - 1.2);
+    const zStart = az0 + 0.3;
+    const hole: HoleRect = {
+      minX: x - 0.5,
+      maxX: Math.min(x + 0.5, ax1 - WALL_T),
+      minZ: zStart + run - 1.5,
+      maxZ: Math.min(zStart + run + 0.3, az0 + alt.lengthM - WALL_T),
+    };
+    return { x, zStart, rise, run, hole };
+  }, [placedRooms, maxH1]);
+
+  const collisionBoxes = useMemo(() => buildCollisionBoxes(placedRooms, walkFloor, stair?.hole), [placedRooms, walkFloor, stair]);
 
   // Start the walkthrough at the center of the first room of the selected floor
   const walkStart = useMemo<[number, number]>(() => {
@@ -705,8 +832,9 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
           {placedRooms
             .filter((r) => !walkMode || r.floor <= walkFloor)
             .map((r) => (
-              <Room3D key={r.id} room={r} maxH1={maxH1} wallSystem={wallSystem} />
+              <Room3D key={r.id} room={r} maxH1={maxH1} wallSystem={wallSystem} stairHole={stair?.hole} />
             ))}
+          {stair && <Escalera x={stair.x} zStart={stair.zStart} rise={stair.rise} run={stair.run} />}
           {/* En el recorrido se quita el techo para ver la casa por dentro desde arriba */}
           {!walkMode && <Roof rooms={placedRooms} maxH1={maxH1} maxH2={maxH2} roofType={roofType} />}
         </group>
