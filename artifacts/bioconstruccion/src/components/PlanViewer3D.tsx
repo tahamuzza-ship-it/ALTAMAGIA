@@ -408,7 +408,7 @@ function Room3D({ room, maxH1, maxH2 = 0, wallSystem, stairHole }: { room: Room,
   );
 }
 
-function Roof({ rooms, maxH1, maxH2, roofType }: { rooms: Room[], maxH1: number, maxH2: number, roofType: string }) {
+function Roof({ rooms, maxH1, maxH2, roofType, crossed = false }: { rooms: Room[], maxH1: number, maxH2: number, roofType: string, crossed?: boolean }) {
   if (!rooms.length) return null;
 
   const f1Rooms = rooms.filter(r => r.floor === 1);
@@ -494,21 +494,29 @@ function Roof({ rooms, maxH1, maxH2, roofType }: { rooms: Room[], maxH1: number,
         <cylinderGeometry args={[0.12, 0.12, roofLen + 0.3, 8]} />
         <meshStandardMaterial color="#8a6a44" roughness={0.9} />
       </mesh>
-      {/* Pitch + (cada agua va desde el alero hasta la cumbrera, sin cruzarse) */}
-      <mesh castShadow receiveShadow 
-            position={[isXLonger ? 0 : roofSpan / 4, actualH / 2, isXLonger ? roofSpan / 4 : 0]} 
-            rotation={[isXLonger ? angle : 0, 0, isXLonger ? 0 : -angle]}>
-        <boxGeometry args={[isXLonger ? roofLen : slopeLen, 0.1, isXLonger ? slopeLen : roofLen]} />
-        <meshStandardMaterial color={roofCol} roughness={0.8} />
-      </mesh>
-      
-      {/* Pitch - */}
-      <mesh castShadow receiveShadow 
-            position={[isXLonger ? 0 : -roofSpan / 4, actualH / 2, isXLonger ? -roofSpan / 4 : 0]} 
-            rotation={[isXLonger ? -angle : 0, 0, isXLonger ? 0 : angle]}>
-        <boxGeometry args={[isXLonger ? roofLen : slopeLen, 0.1, isXLonger ? slopeLen : roofLen]} />
-        <meshStandardMaterial color={roofCol} roughness={0.8} />
-      </mesh>
+      {/* Pitch + (cada agua va desde el alero hasta la cumbrera; en modo "cruzado" se pasa de la cumbrera) */}
+      {(() => {
+        const ext = crossed ? 1.0 : 0; // cuánto se pasa cada agua de la cumbrera (estilo cruzado)
+        const len = slopeLen + ext;
+        const dOff = roofSpan / 4 - (ext / 2) * Math.cos(angle);
+        const yOff = actualH / 2 + (ext / 2) * Math.sin(angle);
+        return (
+          <>
+            <mesh castShadow receiveShadow 
+                  position={[isXLonger ? 0 : dOff, yOff, isXLonger ? dOff : 0]} 
+                  rotation={[isXLonger ? angle : 0, 0, isXLonger ? 0 : -angle]}>
+              <boxGeometry args={[isXLonger ? roofLen : len, 0.1, isXLonger ? len : roofLen]} />
+              <meshStandardMaterial color={roofCol} roughness={0.8} />
+            </mesh>
+            <mesh castShadow receiveShadow 
+                  position={[isXLonger ? 0 : -dOff, yOff, isXLonger ? -dOff : 0]} 
+                  rotation={[isXLonger ? -angle : 0, 0, isXLonger ? 0 : angle]}>
+              <boxGeometry args={[isXLonger ? roofLen : len, 0.1, isXLonger ? len : roofLen]} />
+              <meshStandardMaterial color={roofCol} roughness={0.8} />
+            </mesh>
+          </>
+        );
+      })()}
     </group>
   );
 }
@@ -811,7 +819,7 @@ function LookPad({ lookRef }: { lookRef: React.MutableRefObject<TouchInput> }) {
 
 export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { rooms: Room[], wallSystem: string, roofType: string }) {
   const [walkMode, setWalkMode] = useState(false);
-  const [showRoof, setShowRoof] = useState(true);
+  const [roofMode, setRoofMode] = useState<'cerrado' | 'cruzado' | 'abierto'>('cerrado');
   const [walkFloorState, setWalkFloor] = useState(1);
   const [spawn, setSpawn] = useState<[number, number] | null>(null);
   const [currentRoom, setCurrentRoom] = useState<string | null>(null);
@@ -931,7 +939,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
             </>
           )}
           {/* En el recorrido se quita el techo para ver la casa por dentro desde arriba */}
-          {!walkMode && showRoof && <Roof rooms={placedRooms} maxH1={maxH1} maxH2={maxH2} roofType={roofType} />}
+          {!walkMode && roofMode !== 'abierto' && <Roof rooms={placedRooms} maxH1={maxH1} maxH2={maxH2} roofType={roofType} crossed={roofMode === 'cruzado'} />}
         </group>
 
         {walkMode ? (
@@ -949,8 +957,14 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
               <Footprints className="w-4 h-4 mr-1.5" /> Recorrer
             </Button>
           )}
-          <Button size="sm" variant="secondary" onClick={() => setShowRoof(v => !v)} className="shadow-md">
-            {showRoof ? 'Abrir techo' : 'Cerrar techo'}
+          <Button size="sm" variant={roofMode === 'cerrado' ? 'default' : 'secondary'} onClick={() => setRoofMode('cerrado')} className="shadow-md">
+            Dos aguas
+          </Button>
+          <Button size="sm" variant={roofMode === 'cruzado' ? 'default' : 'secondary'} onClick={() => setRoofMode('cruzado')} className="shadow-md">
+            Cruzado (X)
+          </Button>
+          <Button size="sm" variant={roofMode === 'abierto' ? 'default' : 'secondary'} onClick={() => setRoofMode('abierto')} className="shadow-md">
+            Sin techo
           </Button>
         </div>
       ) : (
