@@ -811,6 +811,7 @@ function LookPad({ lookRef }: { lookRef: React.MutableRefObject<TouchInput> }) {
 
 export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { rooms: Room[], wallSystem: string, roofType: string }) {
   const [walkMode, setWalkMode] = useState(false);
+  const [showRoof, setShowRoof] = useState(true);
   const [walkFloorState, setWalkFloor] = useState(1);
   const [spawn, setSpawn] = useState<[number, number] | null>(null);
   const [currentRoom, setCurrentRoom] = useState<string | null>(null);
@@ -930,7 +931,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
             </>
           )}
           {/* En el recorrido se quita el techo para ver la casa por dentro desde arriba */}
-          {!walkMode && <Roof rooms={placedRooms} maxH1={maxH1} maxH2={maxH2} roofType={roofType} />}
+          {!walkMode && showRoof && <Roof rooms={placedRooms} maxH1={maxH1} maxH2={maxH2} roofType={roofType} />}
         </group>
 
         {walkMode ? (
@@ -942,13 +943,16 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
 
       {/* Overlay UI */}
       {!walkMode ? (
-        canWalk && (
-          <div className="absolute top-3 left-3 z-10">
+        <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
+          {canWalk && (
             <Button size="sm" onClick={() => setWalkMode(true)} className="shadow-md">
               <Footprints className="w-4 h-4 mr-1.5" /> Recorrer
             </Button>
-          </div>
-        )
+          )}
+          <Button size="sm" variant="secondary" onClick={() => setShowRoof(v => !v)} className="shadow-md">
+            {showRoof ? 'Abrir techo' : 'Cerrar techo'}
+          </Button>
+        </div>
       ) : (
         <>
           <LookPad lookRef={touchInput} />
