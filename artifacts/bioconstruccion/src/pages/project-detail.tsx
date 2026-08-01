@@ -25,6 +25,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { formatCOP, formatArea } from "@/lib/format";
 import { Room } from "@workspace/api-client-react";
+import heroCasa from "@/assets/hero-casa.jpg";
 
 const PlanViewer3DScene = lazy(() => import("@/components/PlanViewer3D"));
 
@@ -606,52 +607,62 @@ export default function ProjectDetail() {
   const hasMissingPrices = estimate?.items.some(i => !i.priced);
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500 pb-24">
-      <Button variant="ghost" size="sm" onClick={() => setLocation("/")} className="mb-2 -ml-3 text-muted-foreground">
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        Volver al panel
-      </Button>
-
-      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl md:text-5xl font-serif font-bold text-foreground">{project.name}</h1>
-            <Badge variant="outline" className="text-sm bg-background border-primary/20 text-primary">
-              {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
-            </Badge>
-          </div>
-          {project.location && <p className="text-muted-foreground">{project.location}</p>}
-          {project.description && <p className="text-foreground/80 mt-2 max-w-2xl">{project.description}</p>}
-        </div>
+    <div className="animate-in fade-in duration-500 pb-24">
+      <div className="relative w-full h-[250px] md:h-[300px] flex items-end overflow-hidden bg-primary mb-8">
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url(${heroCasa})`, backgroundPositionY: '30%' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#16291a]/90 via-[#16291a]/50 to-transparent" />
         
-        <div className="flex items-center gap-2">
-          <Select value={project.status} onValueChange={updateProjectStatus}>
-            <SelectTrigger className="w-[180px] bg-background">
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="diseno">Fase de Diseño</SelectItem>
-              <SelectItem value="cotizado">Cotizado</SelectItem>
-              <SelectItem value="construccion">En Construcción</SelectItem>
-              <SelectItem value="terminado">Terminado</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="destructive" size="icon" onClick={handleDeleteProject} title="Eliminar proyecto">
-            <Trash2 className="w-4 h-4" />
-          </Button>
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 md:px-8 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="text-white">
+            <Button variant="ghost" size="sm" onClick={() => setLocation("/")} className="mb-4 -ml-3 text-white/80 hover:text-white hover:bg-white/10">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Volver al panel
+            </Button>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl md:text-5xl font-serif font-bold tracking-tight">{project.name}</h1>
+              <Badge variant="outline" className="text-sm bg-white/10 border-white/20 text-white backdrop-blur-sm">
+                {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+              </Badge>
+            </div>
+            {project.location && <p className="text-white/80 flex items-center gap-1.5"><Map className="w-4 h-4" /> {project.location}</p>}
+            {project.description && <p className="text-white/70 mt-2 max-w-2xl font-light">{project.description}</p>}
+          </div>
+          
+          <div className="flex items-center gap-2 pb-1">
+            <Select value={project.status} onValueChange={updateProjectStatus}>
+              <SelectTrigger className="w-[180px] bg-white/10 text-white border-white/20 hover:bg-white/20 backdrop-blur-md">
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="diseno">Diseño</SelectItem>
+                <SelectItem value="cotizado">Cotizado</SelectItem>
+                <SelectItem value="construccion">En Construcción</SelectItem>
+                <SelectItem value="terminado">Terminado</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Button variant="destructive" size="icon" onClick={handleDeleteProject} title="Eliminar proyecto" className="bg-red-500/80 hover:bg-red-500 border border-white/20 shadow-sm backdrop-blur-md">
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-        <Card className="lg:col-span-1 border-primary/20 bg-primary/5">
-          <CardHeader className="pb-2">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-base text-primary">Evaluación del Terreno</CardTitle>
-              <Button variant="ghost" size="sm" className="h-8 px-2 text-primary" onClick={handleOpenEditTerrain}>
-                <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
-              </Button>
-            </div>
-          </CardHeader>
+      <div className="px-4 md:px-8 max-w-7xl mx-auto space-y-6">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+          <Card className="lg:col-span-1 border-primary/20 bg-primary/5 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-base text-primary">Evaluación del Terreno</CardTitle>
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-primary hover:bg-primary/10" onClick={handleOpenEditTerrain}>
+                  <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
+                </Button>
+              </div>
+            </CardHeader>
           <CardContent className="text-sm space-y-3 pb-4">
             {(!project.terrainAccess && !project.terrainSlope && !project.waterDistanceM && project.canStay == null) ? (
               <p className="text-muted-foreground text-center py-4 bg-background/50 rounded border border-dashed">
@@ -687,7 +698,7 @@ export default function ProjectDetail() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-1">
+        <Card className="lg:col-span-1 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
           <CardHeader className="pb-2">
             <CardTitle className="text-base text-muted-foreground">Sistemas Constructivos</CardTitle>
           </CardHeader>
@@ -724,7 +735,7 @@ export default function ProjectDetail() {
           </CardContent>
         </Card>
         
-          <Card className="lg:col-span-1">
+          <Card className="lg:col-span-1 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
             <CardHeader className="pb-2">
               <CardTitle className="text-base text-primary">Videos y Referencias</CardTitle>
             </CardHeader>
@@ -766,7 +777,7 @@ export default function ProjectDetail() {
           </Card>
 
         {estimate && (
-          <Card className="bg-primary text-primary-foreground border-primary-border shadow-md lg:col-span-1">
+          <Card className="bg-primary text-primary-foreground border-primary-border shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 lg:col-span-1">
             <CardContent className="p-4 flex flex-col justify-center h-full">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -1224,6 +1235,7 @@ export default function ProjectDetail() {
           </Form>
         </DialogContent>
       </Dialog>
+    </div>
     </div>
   );
 }
