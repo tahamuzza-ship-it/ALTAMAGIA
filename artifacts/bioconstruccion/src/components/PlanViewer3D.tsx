@@ -65,13 +65,45 @@ function WallWithDoor({ axis, cx, cz, span, baseZ, h, hBot, cBot, cTop, withWind
           </mesh>
         ))
       )}
-      {/* Ventanas en los segmentos laterales */}
-      {withWindows && seg > 1.2 && offs.map((o, i) => (
-        <mesh key={`win${i}`} position={[pos(o)[0], baseZ + Math.max(hBot + 0.2, h * 0.45) + 0.35, pos(o)[2]]}>
-          <boxGeometry args={dims(seg * 0.5, Math.min(0.9, h * 0.3))} />
-          <meshStandardMaterial color="#2a3b4c" roughness={0.1} metalness={0.8} />
-        </mesh>
-      ))}
+      {/* Ventanas en los segmentos laterales: marco de madera + vidrio claro */}
+      {withWindows && seg > 1.2 && offs.map((o, i) => {
+        const wy = baseZ + Math.max(hBot + 0.2, h * 0.45) + 0.35;
+        const ww = seg * 0.5;
+        const wh = Math.min(0.9, h * 0.3);
+        return (
+          <group key={`win${i}`}>
+            {/* marco */}
+            <mesh castShadow position={[pos(o)[0], wy, pos(o)[2]]}>
+              <boxGeometry args={dims(ww + 0.14, wh + 0.14)} />
+              <meshStandardMaterial color="#7a5230" roughness={0.9} />
+            </mesh>
+            {/* vidrio */}
+            <mesh position={[pos(o)[0], wy, pos(o)[2]]}>
+              <boxGeometry args={axis === 'x' ? [ww, wh, t + 0.06] : [t + 0.06, wh, ww]} />
+              <meshStandardMaterial color="#bfe3ee" roughness={0.05} metalness={0.2} transparent opacity={0.55} />
+            </mesh>
+            {/* travesaño central */}
+            <mesh position={[pos(o)[0], wy, pos(o)[2]]}>
+              <boxGeometry args={axis === 'x' ? [0.05, wh, t + 0.08] : [t + 0.08, wh, 0.05]} />
+              <meshStandardMaterial color="#7a5230" roughness={0.9} />
+            </mesh>
+          </group>
+        );
+      })}
+      {/* Hoja de puerta de madera, entreabierta (la abertura sigue transitable) */}
+      {(() => {
+        const hingeO = -gap / 2;
+        const [hx, , hz] = pos(hingeO);
+        const swing = axis === 'x' ? 1.25 : -1.25;
+        return (
+          <group position={[hx, baseZ + doorH / 2, hz]} rotation={[0, swing, 0]}>
+            <mesh castShadow position={axis === 'x' ? [(gap - 0.08) / 2, 0, 0] : [0, 0, (gap - 0.08) / 2]}>
+              <boxGeometry args={axis === 'x' ? [gap - 0.08, doorH - 0.06, 0.05] : [0.05, doorH - 0.06, gap - 0.08]} />
+              <meshStandardMaterial color="#7a5230" roughness={0.9} />
+            </mesh>
+          </group>
+        );
+      })()}
       {/* Dintel sobre la puerta */}
       {h - doorH > 0.05 && (
         <mesh castShadow position={[cx, baseZ + doorH + (h - doorH) / 2, cz]}>
@@ -86,6 +118,42 @@ function WallWithDoor({ axis, cx, cz, span, baseZ, h, hBot, cBot, cTop, withWind
           <meshStandardMaterial color="#9aa25c" roughness={0.8} />
         </mesh>
       ))}
+    </group>
+  );
+}
+
+// Entrada principal: escalón, portón destacado, techito sobre postes de guadua y letrero
+function EntradaPrincipal({ x, z }: { x: number, z: number }) {
+  return (
+    <group position={[x, 0, z]}>
+      {/* escalón */}
+      <mesh castShadow receiveShadow position={[0, 0.09, -0.55]}>
+        <boxGeometry args={[2.2, 0.18, 1.1]} />
+        <meshStandardMaterial color="#857c6e" roughness={1} />
+      </mesh>
+      {/* portón de madera destacado (doble hoja, cerrado a la vista) */}
+      {[-0.28, 0.28].map((o, i) => (
+        <mesh key={i} castShadow position={[o, DOOR_H / 2, 0.09]}>
+          <boxGeometry args={[0.54, DOOR_H - 0.05, 0.07]} />
+          <meshStandardMaterial color="#8a3b1f" roughness={0.85} />
+        </mesh>
+      ))}
+      {/* postes de guadua del alero */}
+      {[-1, 1].map((s, i) => (
+        <mesh key={`po${i}`} castShadow position={[s * 0.95, 1.25, -0.95]}>
+          <cylinderGeometry args={[0.06, 0.075, 2.5, 7]} />
+          <meshStandardMaterial color="#9aa25c" roughness={0.8} />
+        </mesh>
+      ))}
+      {/* techito inclinado */}
+      <mesh castShadow position={[0, 2.62, -0.55]} rotation={[0.35, 0, 0]}>
+        <boxGeometry args={[2.5, 0.08, 1.5]} />
+        <meshStandardMaterial color="#a0522d" roughness={1} />
+      </mesh>
+      {/* letrero */}
+      <Text position={[0, 3.15, -0.8]} fontSize={0.34} color="#1a2e20" anchorX="center" anchorY="middle" rotation={[0, Math.PI, 0]}>
+        Entrada principal
+      </Text>
     </group>
   );
 }
@@ -133,8 +201,10 @@ function Baranda({ axis, cx, cz, span, baseZ }: { axis: 'x' | 'z', cx: number, c
 }
 
 // Chimenea: hogar de piedra + ducto que sube y sale por el techo
-function Chimenea({ x0, zc, maxH1 }: { x0: number, zc: number, maxH1: number }) {
-  const ductH = maxH1 + 0.7; // el ducto arranca sobre el hogar (1.5 m) y sube hasta maxH1+2.2
+function Chimenea({ x0, zc, maxH1, maxH2 }: { x0: number, zc: number, maxH1: number, maxH2: number }) {
+  // El ducto sube por encima del techo cerrado: paredes piso 1 + altillo + margen
+  const topY = maxH1 + (maxH2 > 0 ? maxH2 + 1.0 : 1.6);
+  const ductH = topY - 1.5; // arranca sobre el hogar (1.5 m)
   return (
     <group position={[x0 + 0.45, 0, zc]}>
       {/* hogar de piedra */}
@@ -204,7 +274,7 @@ function Escalera({ x, zStart, rise, run }: { x: number, zStart: number, rise: n
 
 type HoleRect = { minX: number, maxX: number, minZ: number, maxZ: number };
 
-function Room3D({ room, maxH1, wallSystem, stairHole }: { room: Room, maxH1: number, wallSystem: string, stairHole?: HoleRect }) {
+function Room3D({ room, maxH1, maxH2 = 0, wallSystem, stairHole }: { room: Room, maxH1: number, maxH2?: number, wallSystem: string, stairHole?: HoleRect }) {
   const isFloor2 = room.floor === 2;
   const baseZ = isFloor2 ? maxH1 : 0;
   
@@ -306,7 +376,7 @@ function Room3D({ room, maxH1, wallSystem, stairHole }: { room: Room, maxH1: num
 
       {/* Chimenea en la sala */}
       {(room.kind === 'sala' || /chimenea/i.test(room.name)) && (
-        <Chimenea x0={(room.posX ?? 0)} zc={z} maxH1={maxH1} />
+        <Chimenea x0={(room.posX ?? 0)} zc={z} maxH1={maxH1} maxH2={maxH2} />
       )}
 
       {/* Columnas de guadua en las esquinas — solo piso 1 */}
@@ -794,6 +864,21 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
 
   const collisionBoxes = useMemo(() => buildCollisionBoxes(placedRooms, walkFloor, stair?.hole), [placedRooms, walkFloor, stair]);
 
+  // Entrada principal: en la pared delantera (menor z) de la sala (o del primer cuarto del piso 1)
+  const entrada = useMemo(() => {
+    const f1 = placedRooms.filter(r => r.floor === 1);
+    if (!f1.length) return null;
+    const minZ = Math.min(...f1.map(r => r.posY ?? 0));
+    const maxZ = Math.max(...f1.map(r => (r.posY ?? 0) + r.lengthM));
+    const salaFront = f1.filter(r => Math.abs((r.posY ?? 0) - minZ) < 0.01);
+    const main = salaFront.find(r => r.kind === 'sala') ?? salaFront[0] ?? f1[0];
+    const x = (main.posX ?? 0) + main.widthM / 2;
+    // Parte trasera: centro de la fachada de mayor z
+    const backRooms = f1.filter(r => Math.abs(((r.posY ?? 0) + r.lengthM) - maxZ) < 0.01);
+    const back = backRooms[0] ?? f1[0];
+    return { x, z: minZ, backX: (back.posX ?? 0) + back.widthM / 2, backZ: maxZ };
+  }, [placedRooms]);
+
   // Start the walkthrough at the center of the first room of the selected floor
   const walkStart = useMemo<[number, number]>(() => {
     const first = placedRooms.find(r => r.floor === walkFloor);
@@ -832,9 +917,18 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
           {placedRooms
             .filter((r) => !walkMode || r.floor <= walkFloor)
             .map((r) => (
-              <Room3D key={r.id} room={r} maxH1={maxH1} wallSystem={wallSystem} stairHole={stair?.hole} />
+              <Room3D key={r.id} room={r} maxH1={maxH1} maxH2={maxH2} wallSystem={wallSystem} stairHole={stair?.hole} />
             ))}
           {stair && <Escalera x={stair.x} zStart={stair.zStart} rise={stair.rise} run={stair.run} />}
+          {entrada && (
+            <>
+              <EntradaPrincipal x={entrada.x} z={entrada.z} />
+              {/* Letrero de la parte trasera */}
+              <Text position={[entrada.backX, 2.4, entrada.backZ + 0.4]} fontSize={0.34} color="#1a2e20" anchorX="center" anchorY="middle">
+                Parte trasera
+              </Text>
+            </>
+          )}
           {/* En el recorrido se quita el techo para ver la casa por dentro desde arriba */}
           {!walkMode && <Roof rooms={placedRooms} maxH1={maxH1} maxH2={maxH2} roofType={roofType} />}
         </group>
