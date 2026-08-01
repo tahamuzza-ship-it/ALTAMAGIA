@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "BioCasa - Diseño en Guadua y Tierra"
+description = "App personal para diseñar casas de bioconstrucción (guadua, bahareque, barro, tapia): crear proyectos con planos por espacios y medidas, calcular automáticamente cantidades de materiales naturales, y generar cotizaciones con precios propios."
+version = "1.0.0"
+id = "artifacts/bioconstruccion"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25471
+
+[services.development]
+run = "pnpm --filter @workspace/bioconstruccion run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/bioconstruccion", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/bioconstruccion/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25471"
+BASE_PATH = "/"

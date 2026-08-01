@@ -1,6 +1,6 @@
-# [Project name]
+# BioCasa
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+App personal (en español) para diseñar casas de bioconstrucción: proyectos con espacios/planos 2D, cálculo automático de materiales (guadua, tierra, arena, etc.) y cotización en COP con catálogo de precios propio.
 
 ## Run & Operate
 
@@ -22,15 +22,21 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- Frontend: `artifacts/bioconstruccion` (react-vite, wouter; pages: `/`, `/proyectos/:id`, `/materiales`)
+- API routes: `artifacts/api-server/src/routes/{projects,materials,dashboard}.ts`
+- Estimate logic (factores de materiales por sistema constructivo): `artifacts/api-server/src/lib/estimate.ts`
+- DB schema: `lib/db/src/schema/{projects,rooms,materials}.ts`
+- API contract: `lib/api-spec/openapi.yaml`
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Estimates are computed server-side (`GET /projects/{id}/estimate`) from rooms + wallSystem + roofType, priced by matching material name (case-insensitive) against the catalog; unmatched items return `priced: false`.
+- Material quantity factors are rough anteproyecto approximations, not structural design.
+- Codegen script rewrites the generated zod import to `zod/v4` (orval emits v4 syntax but imports the v3 entrypoint of zod 3.25.x).
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Dashboard de proyectos con estadísticas; detalle de proyecto con plano 2D interactivo (SVG a escala), lista de espacios y cotización de materiales agrupada por categoría; catálogo CRUD de materiales con precios en COP.
 
 ## User preferences
 

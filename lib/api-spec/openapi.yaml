@@ -10,6 +10,16 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: projects
+    description: Bioconstruction house projects
+  - name: rooms
+    description: Rooms (espacios) of a project
+  - name: materials
+    description: Material price catalog
+  - name: estimate
+    description: Material quantity and cost estimates
+  - name: dashboard
+    description: Dashboard summaries
 paths:
   /healthz:
     get:
@@ -24,7 +34,292 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List all projects
+      responses:
+        "200":
+          description: Projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get a project
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+    patch:
+      operationId: updateProject
+      tags: [projects]
+      summary: Update a project
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Delete a project and its rooms
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+  /projects/{id}/rooms:
+    get:
+      operationId: listRooms
+      tags: [rooms]
+      summary: List rooms of a project
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Rooms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Room"
+    post:
+      operationId: createRoom
+      tags: [rooms]
+      summary: Add a room to a project
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoomInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+  /rooms/{id}:
+    patch:
+      operationId: updateRoom
+      tags: [rooms]
+      summary: Update a room
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoomUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+    delete:
+      operationId: deleteRoom
+      tags: [rooms]
+      summary: Delete a room
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+  /projects/{id}/estimate:
+    get:
+      operationId: getProjectEstimate
+      tags: [estimate]
+      summary: Computed material quantities and costs for a project
+      description: Calculates material quantities (guadua, tierra, arena, etc.) from the project's rooms, wall system and roof type, priced with the material catalog.
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Estimate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Estimate"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+  /materials:
+    get:
+      operationId: listMaterials
+      tags: [materials]
+      summary: List material catalog with prices
+      responses:
+        "200":
+          description: Materials
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Material"
+    post:
+      operationId: createMaterial
+      tags: [materials]
+      summary: Add a material to the catalog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaterialInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Material"
+  /materials/{id}:
+    patch:
+      operationId: updateMaterial
+      tags: [materials]
+      summary: Update a material (e.g. its price)
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaterialUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Material"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+    delete:
+      operationId: deleteMaterial
+      tags: [materials]
+      summary: Delete a material
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Overview stats across all projects
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
 components:
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +328,175 @@ components:
           type: string
       required:
         - status
-
+    ErrorMessage:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    Project:
+      type: object
+      required: [id, name, wallSystem, roofType, status, createdAt]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: ["string", "null"] }
+        location: { type: ["string", "null"] }
+        wallSystem:
+          type: string
+          enum: [bahareque, tapia_pisada, adobe, guadua_vista]
+          description: Wall construction system
+        roofType:
+          type: string
+          enum: [teja_barro, palma, zinc, techo_verde]
+        status:
+          type: string
+          enum: [diseno, cotizado, construccion, terminado]
+        notes: { type: ["string", "null"] }
+        createdAt: { type: string }
+    ProjectInput:
+      type: object
+      required: [name, wallSystem, roofType]
+      properties:
+        name: { type: string, minLength: 1 }
+        description: { type: string }
+        location: { type: string }
+        wallSystem:
+          type: string
+          enum: [bahareque, tapia_pisada, adobe, guadua_vista]
+        roofType:
+          type: string
+          enum: [teja_barro, palma, zinc, techo_verde]
+        status:
+          type: string
+          enum: [diseno, cotizado, construccion, terminado]
+        notes: { type: string }
+    ProjectUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        description: { type: ["string", "null"] }
+        location: { type: ["string", "null"] }
+        wallSystem:
+          type: string
+          enum: [bahareque, tapia_pisada, adobe, guadua_vista]
+        roofType:
+          type: string
+          enum: [teja_barro, palma, zinc, techo_verde]
+        status:
+          type: string
+          enum: [diseno, cotizado, construccion, terminado]
+        notes: { type: ["string", "null"] }
+    Room:
+      type: object
+      required: [id, projectId, name, kind, widthM, lengthM, heightM]
+      properties:
+        id: { type: integer }
+        projectId: { type: integer }
+        name: { type: string }
+        kind:
+          type: string
+          enum: [habitacion, sala, cocina, bano, comedor, corredor, taller, otro]
+        widthM: { type: number, description: Width in meters }
+        lengthM: { type: number, description: Length in meters }
+        heightM: { type: number, description: Wall height in meters }
+        posX: { type: ["number", "null"], description: X position in meters on the floor plan }
+        posY: { type: ["number", "null"], description: Y position in meters on the floor plan }
+    RoomInput:
+      type: object
+      required: [name, kind, widthM, lengthM, heightM]
+      properties:
+        name: { type: string, minLength: 1 }
+        kind:
+          type: string
+          enum: [habitacion, sala, cocina, bano, comedor, corredor, taller, otro]
+        widthM: { type: number, exclusiveMinimum: 0 }
+        lengthM: { type: number, exclusiveMinimum: 0 }
+        heightM: { type: number, exclusiveMinimum: 0 }
+        posX: { type: number }
+        posY: { type: number }
+    RoomUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        kind:
+          type: string
+          enum: [habitacion, sala, cocina, bano, comedor, corredor, taller, otro]
+        widthM: { type: number, exclusiveMinimum: 0 }
+        lengthM: { type: number, exclusiveMinimum: 0 }
+        heightM: { type: number, exclusiveMinimum: 0 }
+        posX: { type: ["number", "null"] }
+        posY: { type: ["number", "null"] }
+    Material:
+      type: object
+      required: [id, name, unit, unitPrice, category]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        unit: { type: string, description: "Unit of measure, e.g. unidad, m3, bulto, m2" }
+        unitPrice: { type: number, description: Price per unit in COP }
+        category:
+          type: string
+          enum: [estructura, muros, cubierta, acabados, otros]
+    MaterialInput:
+      type: object
+      required: [name, unit, unitPrice, category]
+      properties:
+        name: { type: string, minLength: 1 }
+        unit: { type: string, minLength: 1 }
+        unitPrice: { type: number, minimum: 0 }
+        category:
+          type: string
+          enum: [estructura, muros, cubierta, acabados, otros]
+    MaterialUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        unit: { type: string, minLength: 1 }
+        unitPrice: { type: number, minimum: 0 }
+        category:
+          type: string
+          enum: [estructura, muros, cubierta, acabados, otros]
+    EstimateItem:
+      type: object
+      required: [materialName, category, quantity, unit, unitPrice, subtotal, priced]
+      properties:
+        materialName: { type: string }
+        category:
+          type: string
+          enum: [estructura, muros, cubierta, acabados, otros]
+        quantity: { type: number }
+        unit: { type: string }
+        unitPrice: { type: number, description: 0 when the material is not in the catalog }
+        subtotal: { type: number }
+        priced: { type: boolean, description: False when no catalog price was found }
+    Estimate:
+      type: object
+      required: [projectId, floorAreaM2, wallAreaM2, roofAreaM2, items, totalCost]
+      properties:
+        projectId: { type: integer }
+        floorAreaM2: { type: number }
+        wallAreaM2: { type: number }
+        roofAreaM2: { type: number }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/EstimateItem"
+        totalCost: { type: number }
+    StatusCount:
+      type: object
+      required: [status, count]
+      properties:
+        status: { type: string }
+        count: { type: integer }
+    DashboardSummary:
+      type: object
+      required: [totalProjects, totalRooms, totalFloorAreaM2, byStatus]
+      properties:
+        totalProjects: { type: integer }
+        totalRooms: { type: integer }
+        totalFloorAreaM2: { type: number }
+        byStatus:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusCount"
