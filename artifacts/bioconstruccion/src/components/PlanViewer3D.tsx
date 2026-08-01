@@ -958,7 +958,12 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
     // Parte trasera: centro de la fachada de mayor z
     const backRooms = f1.filter(r => Math.abs(((r.posY ?? 0) + r.lengthM) - maxZ) < 0.01);
     const back = backRooms[0] ?? f1[0];
-    return { x, z: minZ, backX: (back.posX ?? 0) + back.widthM / 2, backZ: maxZ };
+    const minX = Math.min(...f1.map(r => r.posX ?? 0));
+    const maxX = Math.max(...f1.map(r => (r.posX ?? 0) + r.widthM));
+    return {
+      x, z: minZ, backX: (back.posX ?? 0) + back.widthM / 2, backZ: maxZ,
+      midX: (minX + maxX) / 2, midZ: (minZ + maxZ) / 2, minX, maxX,
+    };
   }, [placedRooms]);
 
   // Start the walkthrough at the center of the first room of the selected floor
@@ -1009,10 +1014,17 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
               <Text position={[entrada.backX, 2.4, entrada.backZ + 0.4]} fontSize={0.34} color="#1a2e20" anchorX="center" anchorY="middle">
                 Parte trasera
               </Text>
-              {/* Letrero del sobrecimiento de piedra */}
-              <Text position={[entrada.x + 2.2, 0.62, entrada.z - 0.25]} fontSize={0.26} color="#4a4238" anchorX="center" anchorY="middle" rotation={[0, Math.PI, 0]}>
-                Bases en piedra (30 cm)
-              </Text>
+              {/* Letrero del sobrecimiento de piedra: en los cuatro frentes */}
+              {[
+                { p: [entrada.midX, 0.62, entrada.z - 0.3] as [number, number, number], rotY: Math.PI },
+                { p: [entrada.midX, 0.62, entrada.backZ + 0.3] as [number, number, number], rotY: 0 },
+                { p: [entrada.minX - 0.3, 0.62, entrada.midZ] as [number, number, number], rotY: -Math.PI / 2 },
+                { p: [entrada.maxX + 0.3, 0.62, entrada.midZ] as [number, number, number], rotY: Math.PI / 2 },
+              ].map((l, i) => (
+                <Text key={`piedra${i}`} position={l.p} fontSize={0.32} color="#120d07" outlineWidth={0.01} outlineColor="#f5efe2" anchorX="center" anchorY="middle" rotation={[0, l.rotY, 0]}>
+                  Bases en piedra (30 cm)
+                </Text>
+              ))}
             </>
           )}
           {/* En el recorrido se quita el techo para ver la casa por dentro desde arriba */}
