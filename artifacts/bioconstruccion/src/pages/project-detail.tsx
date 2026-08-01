@@ -328,6 +328,24 @@ function PlanViewer3D({ rooms, onRoomClick }: { rooms: Room[], onRoomClick: (r: 
                 points={`${ty.x},${ty.y} ${py.x},${py.y} ${pxy.x},${pxy.y} ${txy.x},${txy.y}`}
                 className="fill-[#d4c3ab] stroke-[#c0af98] stroke-[0.05] group-hover:fill-[#c9b49a] transition-colors"
               />
+              {/* Sobrecimiento de piedra (30 cm) en la base — solo piso 1 */}
+              {r.floor === 1 && (() => {
+                const bX0 = project(r.x + r.w, r.y, r.z + 0.3);
+                const bXY = project(r.x + r.w, r.y + r.l, r.z + 0.3);
+                const bY0 = project(r.x, r.y + r.l, r.z + 0.3);
+                return (
+                  <>
+                    <polygon
+                      points={`${bX0.x},${bX0.y} ${px.x},${px.y} ${pxy.x},${pxy.y} ${bXY.x},${bXY.y}`}
+                      className="fill-[#8b8175] stroke-[#736a5e] stroke-[0.04] pointer-events-none"
+                    />
+                    <polygon
+                      points={`${bY0.x},${bY0.y} ${py.x},${py.y} ${pxy.x},${pxy.y} ${bXY.x},${bXY.y}`}
+                      className="fill-[#7d746a] stroke-[#736a5e] stroke-[0.04] pointer-events-none"
+                    />
+                  </>
+                );
+              })()}
               <polygon 
                 points={`${t0.x},${t0.y} ${tx.x},${tx.y} ${txy.x},${txy.y} ${ty.x},${ty.y}`}
                 className="fill-[#f5ebd8] stroke-[#d4c3ab] stroke-[0.05] group-hover:fill-[#eee1ca] transition-colors"

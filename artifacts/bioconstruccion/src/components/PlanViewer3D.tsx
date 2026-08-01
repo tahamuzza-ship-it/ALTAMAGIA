@@ -65,6 +65,13 @@ function WallWithDoor({ axis, cx, cz, span, baseZ, h, hBot, cBot, cTop, withWind
           </mesh>
         ))
       )}
+      {/* Sobrecimiento de piedra (30 cm) en la base de las paredes del piso 1 */}
+      {baseZ < 0.01 && offs.map((o, i) => (
+        <mesh key={`base${i}`} castShadow receiveShadow position={[pos(o)[0], 0.15, pos(o)[2]]}>
+          <boxGeometry args={axis === 'x' ? [seg, 0.3, t + 0.12] : [t + 0.12, 0.3, seg]} />
+          <meshStandardMaterial color="#8b8175" roughness={1} />
+        </mesh>
+      ))}
       {/* Ventanas en los segmentos laterales: marco de madera + vidrio claro */}
       {withWindows && seg > 1.2 && offs.map((o, i) => {
         const wy = baseZ + Math.max(hBot + 0.2, h * 0.45) + 0.35;
