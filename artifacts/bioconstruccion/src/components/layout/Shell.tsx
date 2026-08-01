@@ -12,12 +12,18 @@ export function Sidebar() {
   ];
 
   return (
-    <aside
-      className="w-64 border-r flex-shrink-0 hidden md:flex flex-col relative bg-cover bg-center"
-      style={{ backgroundImage: `url(${burritoCampo})`, backgroundPosition: "0% 60%" }}
-    >
-      {/* Velo claro para que el texto se lea sobre la foto */}
-      <div className="absolute inset-0 bg-card/35" />
+    <aside className="w-64 border-r flex-shrink-0 hidden md:flex flex-col relative overflow-hidden">
+      {/* Foto de fondo con mas color */}
+      <div
+        className="absolute inset-0 bg-cover"
+        style={{
+          backgroundImage: `url(${burritoCampo})`,
+          backgroundPosition: "0% 60%",
+          filter: "saturate(1.45) contrast(1.08) brightness(1.05)",
+        }}
+      />
+      {/* Velo muy suave para que el texto se lea sobre la foto */}
+      <div className="absolute inset-0 bg-card/10" />
       <div className="relative flex flex-col flex-1">
       <div className="p-6 border-b">
         <h1 className="text-2xl font-serif font-bold text-primary flex items-center gap-2">
