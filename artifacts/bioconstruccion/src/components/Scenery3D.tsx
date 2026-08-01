@@ -101,6 +101,59 @@ function Calf({ position, rotationY = 0, tone = '#b98a5f' }: { position: [number
   );
 }
 
+/** Perro criollo low-poly: cuerpo, cabeza, orejas paradas, patas y cola arriba */
+function Dog({ position, rotationY = 0 }: { position: [number, number, number]; rotationY?: number }) {
+  const tone = '#8a6b3d';
+  return (
+    <group position={position} rotation={[0, rotationY, 0]}>
+      {/* cuerpo */}
+      <mesh castShadow position={[0, 0.38, 0]}>
+        <boxGeometry args={[0.62, 0.28, 0.26]} />
+        <meshStandardMaterial color={tone} roughness={1} />
+      </mesh>
+      {/* pecho blanco */}
+      <mesh position={[0.18, 0.36, 0]}>
+        <boxGeometry args={[0.2, 0.3, 0.27]} />
+        <meshStandardMaterial color="#f0e8d8" roughness={1} />
+      </mesh>
+      {/* cabeza */}
+      <mesh castShadow position={[0.42, 0.58, 0]}>
+        <boxGeometry args={[0.24, 0.22, 0.2]} />
+        <meshStandardMaterial color={tone} roughness={1} />
+      </mesh>
+      {/* hocico */}
+      <mesh position={[0.56, 0.53, 0]}>
+        <boxGeometry args={[0.12, 0.1, 0.12]} />
+        <meshStandardMaterial color="#5f4526" roughness={1} />
+      </mesh>
+      {/* nariz */}
+      <mesh position={[0.63, 0.55, 0]}>
+        <boxGeometry args={[0.04, 0.05, 0.06]} />
+        <meshStandardMaterial color="#241a10" roughness={0.8} />
+      </mesh>
+      {/* orejas paradas */}
+      {[0.07, -0.07].map((dz, i) => (
+        <mesh key={i} castShadow position={[0.38, 0.74, dz]} rotation={[0, 0, 0.15]}>
+          <coneGeometry args={[0.05, 0.14, 4]} />
+          <meshStandardMaterial color={tone} roughness={1} />
+        </mesh>
+      ))}
+      {/* patas */}
+      {[[-0.22, 0.09], [-0.22, -0.09], [0.2, 0.09], [0.2, -0.09]].map(([x, z], i) => (
+        <mesh key={`p${i}`} castShadow position={[x, 0.12, z]}>
+          <boxGeometry args={[0.08, 0.24, 0.08]} />
+          <meshStandardMaterial color={tone} roughness={1} />
+        </mesh>
+      ))}
+      {/* cola levantada */}
+      <mesh position={[-0.34, 0.52, 0]} rotation={[0, 0, -0.8]}>
+        <boxGeometry args={[0.06, 0.26, 0.06]} />
+        <meshStandardMaterial color="#6e5430" roughness={1} />
+      </mesh>
+    </group>
+  );
+}
+
 function Mountains({ center }: { center: [number, number, number] }) {
   const hills = useMemo(() => {
     const rnd = mulberry32(7);
@@ -167,10 +220,13 @@ export default function Scenery3D({ center, clearRadius = 14 }: { center: [numbe
         <Guadua key={`g${i}`} position={p} />
       ))}
 
-      {/* Terneritos pastando a un lado de la casa */}
-      <Calf position={[center[0] + clearRadius + 3, 0, center[2] + 4]} rotationY={-0.6} />
-      <Calf position={[center[0] + clearRadius + 5.5, 0, center[2] + 6.5]} rotationY={2.4} tone="#8a5a3b" />
-      <Calf position={[center[0] + clearRadius + 4.2, 0, center[2] + 9]} rotationY={1.1} tone="#c9a06e" />
+      {/* Terneritos pastando al lado de la casa (cerquita, para que se vean) */}
+      <Calf position={[center[0] + 9, 0, center[2] + 2]} rotationY={-0.6} />
+      <Calf position={[center[0] + 11.5, 0, center[2] + 4.5]} rotationY={2.4} tone="#8a5a3b" />
+      <Calf position={[center[0] + 10, 0, center[2] + 7]} rotationY={1.1} tone="#c9a06e" />
+
+      {/* Perro cuidando cerca de la entrada */}
+      <Dog position={[center[0] - 2.5, 0, center[2] - clearRadius * 0.65]} rotationY={0.5} />
 
       {/* Caminito de tierra hacia la casa */}
       <mesh rotation={[-Math.PI / 2, 0, 0.15]} position={[center[0] + clearRadius * 0.9, 0.005, center[2] - 2]}>
@@ -189,7 +245,7 @@ export default function Scenery3D({ center, clearRadius = 14 }: { center: [numbe
       ))}
 
       {/* Cerquita de madera cerca de los terneritos */}
-      <group position={[center[0] + clearRadius + 1.5, 0, center[2] + 6.5]}>
+      <group position={[center[0] + 7.5, 0, center[2] + 4.5]}>
         {[0, 2, 4, 6].map((dz, i) => (
           <mesh key={i} castShadow position={[0, 0.5, dz - 3]}>
             <boxGeometry args={[0.12, 1, 0.12]} />
