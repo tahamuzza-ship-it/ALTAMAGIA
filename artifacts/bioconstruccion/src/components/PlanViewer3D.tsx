@@ -159,11 +159,11 @@ function Roof({ rooms, maxH1, maxH2, roofType }: { rooms: Room[], maxH1: number,
  * Each wall gets a centered gap (DOOR_WIDTH) so the walkthrough can pass
  * between rooms and enter from outside — simple collision, not full doors.
  */
-function buildCollisionBoxes(rooms: Room[]): Box2D[] {
+function buildCollisionBoxes(rooms: Room[], floor: number): Box2D[] {
   const boxes: Box2D[] = [];
   const t = WALL_T;
 
-  rooms.filter(r => r.floor === 1).forEach(room => {
+  rooms.filter(r => r.floor === floor).forEach(room => {
     const w = room.widthM;
     const l = room.lengthM;
     const x0 = room.posX ?? 0;
@@ -211,7 +211,7 @@ function isTouchDevice(): boolean {
 
 type TouchInput = { move: { x: number, y: number }, look: { dx: number, dy: number } };
 
-function WalkControls({ boxes, start, onExit, touch, touchInput, rooms, onRoomChange }: { boxes: Box2D[], start: [number, number], onExit: () => void, touch: boolean, touchInput: React.MutableRefObject<TouchInput>, rooms: Room[], onRoomChange: (name: string | null) => void }) {
+function WalkControls({ boxes, start, eyeY, floor, onExit, touch, touchInput, rooms, onRoomChange }: { boxes: Box2D[], start: [number, number], eyeY: number, floor: number, onExit: () => void, touch: boolean, touchInput: React.MutableRefObject<TouchInput>, rooms: Room[], onRoomChange: (name: string | null) => void }) {
   const { camera } = useThree();
   const keys = useRef<Record<string, boolean>>({});
   const controlsRef = useRef<any>(null);
@@ -222,7 +222,7 @@ function WalkControls({ boxes, start, onExit, touch, touchInput, rooms, onRoomCh
     const x = camera.position.x;
     const z = camera.position.z;
     const room = rooms.find(r => {
-      if (r.floor !== 1) return false;
+      if (r.floor !== floor) return false;
       const rx = r.posX ?? 0;
       const rz = r.posY ?? 0;
       return x >= rx && x <= rx + r.widthM && z >= rz && z <= rz + r.lengthM;
@@ -235,11 +235,11 @@ function WalkControls({ boxes, start, onExit, touch, touchInput, rooms, onRoomCh
   };
 
   useEffect(() => {
-    camera.position.set(start[0], EYE_HEIGHT, start[1]);
-    camera.lookAt(start[0], EYE_HEIGHT, start[1] - 5);
+    camera.position.set(start[0], eyeY, start[1]);
+    camera.lookAt(start[0], eyeY, start[1] - 5);
     yawPitch.current = { yaw: 0, pitch: 0 };
     if (touch) camera.rotation.order = 'YXZ';
-  }, [camera, start, touch]);
+  }, [camera, start, eyeY, touch]);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => { keys.current[e.code] = true; };
@@ -294,7 +294,7 @@ function WalkControls({ boxes, start, onExit, touch, touchInput, rooms, onRoomCh
     // Axis-separated collision for wall sliding
     if (!collides(nx, camera.position.z, boxes)) camera.position.x = nx;
     if (!collides(camera.position.x, nz, boxes)) camera.position.z = nz;
-    camera.position.y = EYE_HEIGHT;
+    camera.position.y = eyeY;
   });
 
   if (touch) return null; // touch look is handled via drag overlay
@@ -377,6 +377,7 @@ const tmpVec = new Vector3();
 
 export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { rooms: Room[], wallSystem: string, roofType: string }) {
   const [walkMode, setWalkMode] = useState(false);
+  const [walkFloorState, setWalkFloor] = useState(1);
   const [currentRoom, setCurrentRoom] = useState<string | null>(null);
   const touch = useMemo(() => isTouchDevice(), []);
   const touchInput = useRef<TouchInput>({ move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 } });
@@ -402,16 +403,20 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
     return [(minX + maxX) / 2, 0, (minZ + maxZ) / 2];
   }, [placedRooms]);
 
-  const collisionBoxes = useMemo(() => buildCollisionBoxes(placedRooms), [placedRooms]);
+  const hasFloor2 = placedRooms.some(r => r.floor === 2);
+  const walkFloor = hasFloor2 ? walkFloorState : 1;
 
-  // Start the walkthrough at the center of the first ground-floor room
+  const collisionBoxes = useMemo(() => buildCollisionBoxes(placedRooms, walkFloor), [placedRooms, walkFloor]);
+
+  // Start the walkthrough at the center of the first room of the selected floor
   const walkStart = useMemo<[number, number]>(() => {
-    const first = placedRooms.find(r => r.floor === 1);
+    const first = placedRooms.find(r => r.floor === walkFloor);
     if (!first) return [center[0], center[2]];
     return [(first.posX ?? 0) + first.widthM / 2, (first.posY ?? 0) + first.lengthM / 2];
-  }, [placedRooms, center]);
+  }, [placedRooms, center, walkFloor]);
 
   const canWalk = placedRooms.some(r => r.floor === 1);
+  const walkEyeY = walkFloor === 2 ? maxH1 + 0.1 + EYE_HEIGHT : EYE_HEIGHT;
 
   return (
     <div className="relative w-full h-full min-h-[500px]">
@@ -445,7 +450,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
         </group>
 
         {walkMode ? (
-          <WalkControls boxes={collisionBoxes} start={walkStart} onExit={() => { setWalkMode(false); setCurrentRoom(null); }} touch={touch} touchInput={touchInput} rooms={placedRooms} onRoomChange={setCurrentRoom} />
+          <WalkControls boxes={collisionBoxes} start={walkStart} eyeY={walkEyeY} floor={walkFloor} onExit={() => { setWalkMode(false); setCurrentRoom(null); }} touch={touch} touchInput={touchInput} rooms={placedRooms} onRoomChange={setCurrentRoom} />
         ) : (
           <OrbitControls target={[center[0], maxH1 / 2, center[2]]} minDistance={5} maxDistance={50} maxPolarAngle={Math.PI / 2 - 0.05} />
         )}
@@ -468,10 +473,30 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
               <VirtualJoystick onChange={(x, y) => { touchInput.current.move.x = x; touchInput.current.move.y = y; }} />
             </>
           )}
-          <div className="absolute top-3 left-3 z-30">
+          <div className="absolute top-3 left-3 z-30 flex items-center gap-2">
             <Button size="sm" variant="secondary" onClick={() => { setWalkMode(false); setCurrentRoom(null); }} className="shadow-md">
               <X className="w-4 h-4 mr-1.5" /> Salir del recorrido
             </Button>
+            {hasFloor2 && (
+              <div className="flex rounded-md shadow-md overflow-hidden">
+                <Button
+                  size="sm"
+                  variant={walkFloor === 1 ? 'default' : 'secondary'}
+                  className="rounded-none"
+                  onClick={() => setWalkFloor(1)}
+                >
+                  Piso 1
+                </Button>
+                <Button
+                  size="sm"
+                  variant={walkFloor === 2 ? 'default' : 'secondary'}
+                  className="rounded-none"
+                  onClick={() => setWalkFloor(2)}
+                >
+                  Piso 2
+                </Button>
+              </div>
+            )}
           </div>
           {currentRoom && (
             <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
