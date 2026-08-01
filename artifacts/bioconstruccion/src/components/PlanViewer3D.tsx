@@ -211,11 +211,28 @@ function isTouchDevice(): boolean {
 
 type TouchInput = { move: { x: number, y: number }, look: { dx: number, dy: number } };
 
-function WalkControls({ boxes, start, onExit, touch, touchInput }: { boxes: Box2D[], start: [number, number], onExit: () => void, touch: boolean, touchInput: React.MutableRefObject<TouchInput> }) {
+function WalkControls({ boxes, start, onExit, touch, touchInput, rooms, onRoomChange }: { boxes: Box2D[], start: [number, number], onExit: () => void, touch: boolean, touchInput: React.MutableRefObject<TouchInput>, rooms: Room[], onRoomChange: (name: string | null) => void }) {
   const { camera } = useThree();
   const keys = useRef<Record<string, boolean>>({});
   const controlsRef = useRef<any>(null);
   const yawPitch = useRef({ yaw: 0, pitch: 0 }); // yaw 0 = facing -Z
+  const lastRoom = useRef<string | null | undefined>(undefined);
+
+  const updateCurrentRoom = () => {
+    const x = camera.position.x;
+    const z = camera.position.z;
+    const room = rooms.find(r => {
+      if (r.floor !== 1) return false;
+      const rx = r.posX ?? 0;
+      const rz = r.posY ?? 0;
+      return x >= rx && x <= rx + r.widthM && z >= rz && z <= rz + r.lengthM;
+    });
+    const name = room ? room.name : null;
+    if (name !== lastRoom.current) {
+      lastRoom.current = name;
+      onRoomChange(name);
+    }
+  };
 
   useEffect(() => {
     camera.position.set(start[0], EYE_HEIGHT, start[1]);
@@ -236,6 +253,7 @@ function WalkControls({ boxes, start, onExit, touch, touchInput }: { boxes: Box2
   }, []);
 
   useFrame((_, delta) => {
+    updateCurrentRoom();
     const ti = touchInput.current;
 
     // Touch look: apply accumulated drag deltas to camera yaw/pitch
@@ -359,6 +377,7 @@ const tmpVec = new Vector3();
 
 export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { rooms: Room[], wallSystem: string, roofType: string }) {
   const [walkMode, setWalkMode] = useState(false);
+  const [currentRoom, setCurrentRoom] = useState<string | null>(null);
   const touch = useMemo(() => isTouchDevice(), []);
   const touchInput = useRef<TouchInput>({ move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 } });
   const maxH1 = Math.max(0, ...rooms.filter(r => r.floor === 1).map(r => r.heightM));
@@ -426,7 +445,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
         </group>
 
         {walkMode ? (
-          <WalkControls boxes={collisionBoxes} start={walkStart} onExit={() => setWalkMode(false)} touch={touch} touchInput={touchInput} />
+          <WalkControls boxes={collisionBoxes} start={walkStart} onExit={() => { setWalkMode(false); setCurrentRoom(null); }} touch={touch} touchInput={touchInput} rooms={placedRooms} onRoomChange={setCurrentRoom} />
         ) : (
           <OrbitControls target={[center[0], maxH1 / 2, center[2]]} minDistance={5} maxDistance={50} maxPolarAngle={Math.PI / 2 - 0.05} />
         )}
@@ -450,10 +469,17 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
             </>
           )}
           <div className="absolute top-3 left-3 z-30">
-            <Button size="sm" variant="secondary" onClick={() => setWalkMode(false)} className="shadow-md">
+            <Button size="sm" variant="secondary" onClick={() => { setWalkMode(false); setCurrentRoom(null); }} className="shadow-md">
               <X className="w-4 h-4 mr-1.5" /> Salir del recorrido
             </Button>
           </div>
+          {currentRoom && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+              <div className="bg-black/60 text-white text-sm font-medium rounded-lg px-4 py-2 backdrop-blur-sm shadow">
+                Estás en: {currentRoom}
+              </div>
+            </div>
+          )}
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
             <div className="bg-black/60 text-white text-xs rounded-lg px-4 py-2 backdrop-blur-sm">
               {touch
