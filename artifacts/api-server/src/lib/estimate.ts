@@ -14,7 +14,13 @@ export interface Areas {
   roofAreaM2: number;
   upperFloorAreaM2: number;
   footprintAreaM2: number;
+  /** Wall area below 1.20 m (zocalo de adobe en sistema mixto) */
+  wallLowerAreaM2: number;
+  /** Wall area above 1.20 m */
+  wallUpperAreaM2: number;
 }
+
+const MIXTA_ZOCALO_M = 1.2;
 
 const round = (n: number, d = 1): number => {
   const f = 10 ** d;
@@ -24,12 +30,19 @@ const round = (n: number, d = 1): number => {
 export function computeAreas(rooms: Room[]): Areas {
   let floor = 0;
   let wall = 0;
+  let wallLower = 0;
   let footprint = 0;
   let upper = 0;
   for (const r of rooms) {
     const area = r.widthM * r.lengthM;
+    const perimeter = 2 * (r.widthM + r.lengthM);
     floor += area;
-    wall += 2 * (r.widthM + r.lengthM) * r.heightM;
+    wall += perimeter * r.heightM;
+    // El zocalo de adobe (sistema mixto) solo aplica a los muros de la
+    // planta baja: los muros del altillo no llevan zocalo.
+    if (r.floor < 2) {
+      wallLower += perimeter * Math.min(MIXTA_ZOCALO_M, r.heightM);
+    }
     if (r.floor >= 2) {
       upper += area;
     } else {
@@ -45,6 +58,8 @@ export function computeAreas(rooms: Room[]): Areas {
     roofAreaM2: round(roofBase * 1.15, 2),
     upperFloorAreaM2: round(upper, 2),
     footprintAreaM2: round(roofBase, 2),
+    wallLowerAreaM2: round(wallLower, 2),
+    wallUpperAreaM2: round(Math.max(0, wall - wallLower), 2),
   };
 }
 
@@ -69,6 +84,8 @@ export function computeItems(
     roofAreaM2: roof,
     upperFloorAreaM2: upper,
     footprintAreaM2: footprint,
+    wallLowerAreaM2: wallLower,
+    wallUpperAreaM2: wallUpper,
   } = areas;
   const items: RawEstimateItem[] = [];
   const add = (
@@ -197,6 +214,56 @@ export function computeItems(
         wall * 0.02,
         "m3",
         `Mortero de pega: 0.02 m3 por m2 de muro (${wall} m2 x 0.02)`,
+      );
+      break;
+    }
+    case "mixta": {
+      // Zocalo de adobe hasta 1.20 m + bahareque arriba (con descuento de
+      // 15% en la parte alta por ventanas y vanos).
+      const bloques = wallLower * ADOBES_POR_M2;
+      const jornadas = Math.ceil(bloques / ADOBES_POR_JORNADA);
+      const upperNet = wallUpper * 0.85;
+      add(
+        "Adobe grande (hecho en obra)",
+        "muros",
+        bloques,
+        "unidad",
+        `Zocalo de adobe hasta ${MIXTA_ZOCALO_M} m: ${ADOBES_POR_M2} bloques por m2 de muro bajo (${wallLower} m2 x ${ADOBES_POR_M2}). Se fabrican en obra.`,
+      );
+      add(
+        "Jornada fabricacion de adobes (2 personas)",
+        "otros",
+        jornadas,
+        "dia",
+        `Entre 2 personas se hacen ~${ADOBES_POR_JORNADA} adobes al dia: ${round(bloques, 0)} bloques / ${ADOBES_POR_JORNADA} = ${jornadas} jornadas.`,
+      );
+      add(
+        "Esterilla de guadua",
+        "muros",
+        upperNet * 1.1,
+        "m2",
+        `Bahareque en la parte alta (descontando 15% de ventanas): ${round(upperNet, 1)} m2 x 1.1 (doble cara y desperdicio)`,
+      );
+      add(
+        "Tierra arcillosa",
+        "muros",
+        wallLower * 0.02 + upperNet * 0.06,
+        "m3",
+        `Mortero de pega del zocalo (${wallLower} m2 x 0.02) + embutido y revoque del bahareque (${round(upperNet, 1)} m2 x 0.06)`,
+      );
+      add(
+        "Arena",
+        "muros",
+        wallLower * 0.02 + upperNet * 0.03,
+        "m3",
+        `Mortero de pega (${wallLower} m2 x 0.02) + mezcla del revoque (${round(upperNet, 1)} m2 x 0.03)`,
+      );
+      add(
+        "Fibra vegetal (paja)",
+        "muros",
+        upperNet * 0.4,
+        "kg",
+        `Refuerzo del barro del bahareque: 0.4 kg por m2 (${round(upperNet, 1)} m2 x 0.4)`,
       );
       break;
     }

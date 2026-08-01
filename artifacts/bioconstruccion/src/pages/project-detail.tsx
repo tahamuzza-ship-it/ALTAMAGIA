@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, Suspense, lazy } from "react";
 import { useRoute, useLocation } from "wouter";
 import { 
   useGetProject, useUpdateProject, useDeleteProject, 
@@ -10,7 +10,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { 
-  Loader2, ArrowLeft, Trash2, Pencil, Plus, Maximize, AlertCircle, Map, Droplets, Home, Clock, Users, Flame
+  Loader2, ArrowLeft, Trash2, Pencil, Plus, Maximize, AlertCircle, Map, Droplets, Home, Clock, Users, Flame, ExternalLink, X
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { formatCOP, formatArea } from "@/lib/format";
 import { Room } from "@workspace/api-client-react";
+
+const PlanViewer3DScene = lazy(() => import("@/components/PlanViewer3D"));
 
 const roomSchema = z.object({
   name: z.string().min(1, "Obligatorio"),
@@ -559,6 +561,38 @@ export default function ProjectDetail() {
     );
   };
 
+  const [linkInput, setLinkInput] = useState("");
+
+  const addReferenceLink = () => {
+    if (!linkInput || !project) return;
+    try {
+      const parsed = new URL(linkInput);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        throw new Error("protocolo no permitido");
+      }
+      const newLinks = [...(project.referenceLinks || []), linkInput];
+      updateProject.mutate({ id: projectId, data: { referenceLinks: newLinks } }, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(projectId) });
+          setLinkInput("");
+        }
+      });
+    } catch (e) {
+      alert("Por favor ingresa una URL válida (ej. https://youtube.com/...)");
+    }
+  };
+
+  const removeReferenceLink = (index: number) => {
+    if (!project) return;
+    const newLinks = [...(project.referenceLinks || [])];
+    newLinks.splice(index, 1);
+    updateProject.mutate({ id: projectId, data: { referenceLinks: newLinks } }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(projectId) });
+      }
+    });
+  };
+
   if (projectLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -669,6 +703,7 @@ export default function ProjectDetail() {
                   <SelectItem value="tapia_pisada">Tapia Pisada</SelectItem>
                   <SelectItem value="adobe">Adobe</SelectItem>
                   <SelectItem value="guadua_vista">Guadua a la vista</SelectItem>
+                  <SelectItem value="mixta">Mixta (adobe + bahareque)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -689,6 +724,47 @@ export default function ProjectDetail() {
           </CardContent>
         </Card>
         
+          <Card className="lg:col-span-1">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base text-primary">Videos y Referencias</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="https://..." 
+                  value={linkInput} 
+                  onChange={(e) => setLinkInput(e.target.value)}
+                  onKeyDown={(e) => { if(e.key === 'Enter') addReferenceLink(); }}
+                />
+                <Button size="icon" variant="secondary" onClick={addReferenceLink} disabled={!linkInput || updateProject.isPending}>
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <div className="space-y-2">
+                {(!project.referenceLinks || project.referenceLinks.length === 0) ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">No has guardado referencias aún.</p>
+                ) : (
+                  project.referenceLinks.map((link, i) => {
+                    let domain = link;
+                    try { domain = new URL(link).hostname.replace('www.', ''); } catch(e){}
+                    return (
+                      <div key={i} className="flex items-center justify-between bg-muted/30 border rounded-md p-2 text-sm group">
+                        <a href={link} target="_blank" rel="noreferrer" className="flex items-center gap-2 truncate text-foreground hover:text-primary transition-colors">
+                          <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span className="truncate">{domain}</span>
+                        </a>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all" onClick={() => removeReferenceLink(i)}>
+                          <X className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
         {estimate && (
           <Card className="bg-primary text-primary-foreground border-primary-border shadow-md lg:col-span-1">
             <CardContent className="p-4 flex flex-col justify-center h-full">
@@ -754,7 +830,9 @@ export default function ProjectDetail() {
                       <Loader2 className="w-8 h-8 animate-spin text-primary" />
                     </div>
                   ) : viewMode === "3d" ? (
-                    <PlanViewer3D rooms={rooms || []} onRoomClick={handleOpenEditRoom} />
+                    <Suspense fallback={<div className="flex items-center justify-center min-h-[500px]"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+                      <PlanViewer3DScene rooms={rooms || []} wallSystem={project.wallSystem} roofType={project.roofType} />
+                    </Suspense>
                   ) : (
                     <PlanViewer rooms={rooms || []} selectedFloor={selectedFloor} onRoomClick={handleOpenEditRoom} onRoomDrop={onRoomDrop} />
                   )}

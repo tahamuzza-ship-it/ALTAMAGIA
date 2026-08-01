@@ -14,4 +14,5 @@ export const ProjectInputWallSystem = {
   tapia_pisada: 'tapia_pisada',
   adobe: 'adobe',
   guadua_vista: 'guadua_vista',
+  mixta: 'mixta',
 } as const;

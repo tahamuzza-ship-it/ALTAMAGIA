@@ -24,6 +24,7 @@ export const ProjectWallSystem = {
   tapia_pisada: 'tapia_pisada',
   adobe: 'adobe',
   guadua_vista: 'guadua_vista',
+  mixta: 'mixta',
 } as const;
 
 export type ProjectRoofType = typeof ProjectRoofType[keyof typeof ProjectRoofType];
@@ -116,6 +117,11 @@ export interface Project {
      * @nullable
      */
   targetMonths?: number | null;
+  /**
+     * Video or web reference links for the project
+     * @nullable
+     */
+  referenceLinks?: string[] | null;
   createdAt: string;
 }
 
@@ -127,6 +133,7 @@ export const ProjectInputWallSystem = {
   tapia_pisada: 'tapia_pisada',
   adobe: 'adobe',
   guadua_vista: 'guadua_vista',
+  mixta: 'mixta',
 } as const;
 
 export type ProjectInputRoofType = typeof ProjectInputRoofType[keyof typeof ProjectInputRoofType];
@@ -183,6 +190,12 @@ export interface ProjectInput {
   canCook?: boolean;
   numPeople?: number;
   targetMonths?: number;
+  /**
+     * @maxItems 50
+     * @items.maxLength 2000
+     * @items.pattern ^https?://
+     */
+  referenceLinks?: string[];
 }
 
 export type ProjectUpdateWallSystem = typeof ProjectUpdateWallSystem[keyof typeof ProjectUpdateWallSystem];
@@ -193,6 +206,7 @@ export const ProjectUpdateWallSystem = {
   tapia_pisada: 'tapia_pisada',
   adobe: 'adobe',
   guadua_vista: 'guadua_vista',
+  mixta: 'mixta',
 } as const;
 
 export type ProjectUpdateRoofType = typeof ProjectUpdateRoofType[keyof typeof ProjectUpdateRoofType];
@@ -265,6 +279,13 @@ export interface ProjectUpdate {
   numPeople?: number | null;
   /** @nullable */
   targetMonths?: number | null;
+  /**
+     * @maxItems 50
+     * @nullable
+     * @items.maxLength 2000
+     * @items.pattern ^https?://
+     */
+  referenceLinks?: string[] | null;
 }
 
 export type RoomKind = typeof RoomKind[keyof typeof RoomKind];

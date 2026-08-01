@@ -2,6 +2,7 @@ import {
   boolean,
   doublePrecision,
   integer,
+  jsonb,
   pgTable,
   serial,
   text,
@@ -26,6 +27,7 @@ export const projectsTable = pgTable("projects", {
   canCook: boolean("can_cook"),
   numPeople: integer("num_people"),
   targetMonths: doublePrecision("target_months"),
+  referenceLinks: jsonb("reference_links").$type<string[]>(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

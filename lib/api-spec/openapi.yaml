@@ -344,7 +344,7 @@ components:
         location: { type: ["string", "null"] }
         wallSystem:
           type: string
-          enum: [bahareque, tapia_pisada, adobe, guadua_vista]
+          enum: [bahareque, tapia_pisada, adobe, guadua_vista, mixta]
           description: Wall construction system
         roofType:
           type: string
@@ -365,6 +365,10 @@ components:
         canCook: { type: ["boolean", "null"], description: Whether the crew can cook on site }
         numPeople: { type: ["integer", "null"], description: Number of people the house is for }
         targetMonths: { type: ["number", "null"], description: Target construction time in months }
+        referenceLinks:
+          type: ["array", "null"]
+          items: { type: string }
+          description: Video or web reference links for the project
         createdAt: { type: string }
     ProjectInput:
       type: object
@@ -375,7 +379,7 @@ components:
         location: { type: string }
         wallSystem:
           type: string
-          enum: [bahareque, tapia_pisada, adobe, guadua_vista]
+          enum: [bahareque, tapia_pisada, adobe, guadua_vista, mixta]
         roofType:
           type: string
           enum: [teja_barro, palma, zinc, techo_verde]
@@ -394,6 +398,10 @@ components:
         canCook: { type: boolean }
         numPeople: { type: integer }
         targetMonths: { type: number }
+        referenceLinks:
+          type: array
+          maxItems: 50
+          items: { type: string, pattern: "^https?://", maxLength: 2000 }
     ProjectUpdate:
       type: object
       properties:
@@ -402,7 +410,7 @@ components:
         location: { type: ["string", "null"] }
         wallSystem:
           type: string
-          enum: [bahareque, tapia_pisada, adobe, guadua_vista]
+          enum: [bahareque, tapia_pisada, adobe, guadua_vista, mixta]
         roofType:
           type: string
           enum: [teja_barro, palma, zinc, techo_verde]
@@ -421,6 +429,10 @@ components:
         canCook: { type: ["boolean", "null"] }
         numPeople: { type: ["integer", "null"] }
         targetMonths: { type: ["number", "null"] }
+        referenceLinks:
+          type: ["array", "null"]
+          maxItems: 50
+          items: { type: string, pattern: "^https?://", maxLength: 2000 }
     Room:
       type: object
       required: [id, projectId, name, kind, widthM, lengthM, heightM, floor]

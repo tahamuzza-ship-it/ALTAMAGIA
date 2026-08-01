@@ -56,5 +56,10 @@ export interface Project {
      * @nullable
      */
   targetMonths?: number | null;
+  /**
+     * Video or web reference links for the project
+     * @nullable
+     */
+  referenceLinks?: string[] | null;
   createdAt: string;
 }

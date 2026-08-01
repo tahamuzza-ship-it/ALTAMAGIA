@@ -163,6 +163,7 @@ export default function Dashboard() {
                             <SelectItem value="tapia_pisada">Tapia Pisada</SelectItem>
                             <SelectItem value="adobe">Adobe</SelectItem>
                             <SelectItem value="guadua_vista">Guadua a la vista</SelectItem>
+                            <SelectItem value="mixta">Mixta (adobe + bahareque)</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />

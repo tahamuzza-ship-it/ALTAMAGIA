@@ -37,4 +37,11 @@ export interface ProjectUpdate {
   numPeople?: number | null;
   /** @nullable */
   targetMonths?: number | null;
+  /**
+     * @maxItems 50
+     * @nullable
+     * @items.maxLength 2000
+     * @items.pattern ^https?://
+     */
+  referenceLinks?: string[] | null;
 }

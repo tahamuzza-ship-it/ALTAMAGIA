@@ -27,4 +27,10 @@ export interface ProjectInput {
   canCook?: boolean;
   numPeople?: number;
   targetMonths?: number;
+  /**
+     * @maxItems 50
+     * @items.maxLength 2000
+     * @items.pattern ^https?://
+     */
+  referenceLinks?: string[];
 }

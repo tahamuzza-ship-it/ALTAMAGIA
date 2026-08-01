@@ -25,7 +25,7 @@ export const ListProjectsResponseItem = zod.object({
   "name": zod.string(),
   "description": zod.string().nullish(),
   "location": zod.string().nullish(),
-  "wallSystem": zod.enum(['bahareque', 'tapia_pisada', 'adobe', 'guadua_vista']).describe('Wall construction system'),
+  "wallSystem": zod.enum(['bahareque', 'tapia_pisada', 'adobe', 'guadua_vista', 'mixta']).describe('Wall construction system'),
   "roofType": zod.enum(['teja_barro', 'palma', 'zinc', 'techo_verde']),
   "status": zod.enum(['diseno', 'cotizado', 'construccion', 'terminado']),
   "notes": zod.string().nullish(),
@@ -36,6 +36,7 @@ export const ListProjectsResponseItem = zod.object({
   "canCook": zod.boolean().nullish().describe('Whether the crew can cook on site'),
   "numPeople": zod.int().nullish().describe('Number of people the house is for'),
   "targetMonths": zod.number().nullish().describe('Target construction time in months'),
+  "referenceLinks": zod.array(zod.string()).nullish().describe('Video or web reference links for the project'),
   "createdAt": zod.string()
 })
 export const ListProjectsResponse = zod.array(ListProjectsResponseItem)
@@ -45,13 +46,19 @@ export const ListProjectsResponse = zod.array(ListProjectsResponseItem)
  * @summary Create a project
  */
 
+export const createProjectBodyReferenceLinksItemMax = 2000;
+
+
+export const createProjectBodyReferenceLinksItemRegExp = new RegExp('^https?:/');
+export const createProjectBodyReferenceLinksMax = 50;
+
 
 
 export const CreateProjectBody = zod.object({
   "name": zod.string().min(1),
   "description": zod.string().optional(),
   "location": zod.string().optional(),
-  "wallSystem": zod.enum(['bahareque', 'tapia_pisada', 'adobe', 'guadua_vista']),
+  "wallSystem": zod.enum(['bahareque', 'tapia_pisada', 'adobe', 'guadua_vista', 'mixta']),
   "roofType": zod.enum(['teja_barro', 'palma', 'zinc', 'techo_verde']),
   "status": zod.enum(['diseno', 'cotizado', 'construccion', 'terminado']).optional(),
   "notes": zod.string().optional(),
@@ -61,7 +68,8 @@ export const CreateProjectBody = zod.object({
   "canStay": zod.boolean().optional(),
   "canCook": zod.boolean().optional(),
   "numPeople": zod.int().optional(),
-  "targetMonths": zod.number().optional()
+  "targetMonths": zod.number().optional(),
+  "referenceLinks": zod.array(zod.string().max(createProjectBodyReferenceLinksItemMax).regex(createProjectBodyReferenceLinksItemRegExp)).max(createProjectBodyReferenceLinksMax).optional()
 })
 
 export const CreateProjectResponse = zod.object({
@@ -69,7 +77,7 @@ export const CreateProjectResponse = zod.object({
   "name": zod.string(),
   "description": zod.string().nullish(),
   "location": zod.string().nullish(),
-  "wallSystem": zod.enum(['bahareque', 'tapia_pisada', 'adobe', 'guadua_vista']).describe('Wall construction system'),
+  "wallSystem": zod.enum(['bahareque', 'tapia_pisada', 'adobe', 'guadua_vista', 'mixta']).describe('Wall construction system'),
   "roofType": zod.enum(['teja_barro', 'palma', 'zinc', 'techo_verde']),
   "status": zod.enum(['diseno', 'cotizado', 'construccion', 'terminado']),
   "notes": zod.string().nullish(),
@@ -80,6 +88,7 @@ export const CreateProjectResponse = zod.object({
   "canCook": zod.boolean().nullish().describe('Whether the crew can cook on site'),
   "numPeople": zod.int().nullish().describe('Number of people the house is for'),
   "targetMonths": zod.number().nullish().describe('Target construction time in months'),
+  "referenceLinks": zod.array(zod.string()).nullish().describe('Video or web reference links for the project'),
   "createdAt": zod.string()
 })
 
@@ -96,7 +105,7 @@ export const GetProjectResponse = zod.object({
   "name": zod.string(),
   "description": zod.string().nullish(),
   "location": zod.string().nullish(),
-  "wallSystem": zod.enum(['bahareque', 'tapia_pisada', 'adobe', 'guadua_vista']).describe('Wall construction system'),
+  "wallSystem": zod.enum(['bahareque', 'tapia_pisada', 'adobe', 'guadua_vista', 'mixta']).describe('Wall construction system'),
   "roofType": zod.enum(['teja_barro', 'palma', 'zinc', 'techo_verde']),
   "status": zod.enum(['diseno', 'cotizado', 'construccion', 'terminado']),
   "notes": zod.string().nullish(),
@@ -107,6 +116,7 @@ export const GetProjectResponse = zod.object({
   "canCook": zod.boolean().nullish().describe('Whether the crew can cook on site'),
   "numPeople": zod.int().nullish().describe('Number of people the house is for'),
   "targetMonths": zod.number().nullish().describe('Target construction time in months'),
+  "referenceLinks": zod.array(zod.string()).nullish().describe('Video or web reference links for the project'),
   "createdAt": zod.string()
 })
 
@@ -119,13 +129,19 @@ export const UpdateProjectParams = zod.object({
 })
 
 
+export const updateProjectBodyReferenceLinksItemMax = 2000;
+
+
+export const updateProjectBodyReferenceLinksItemRegExp = new RegExp('^https?:/');
+export const updateProjectBodyReferenceLinksMax = 50;
+
 
 
 export const UpdateProjectBody = zod.object({
   "name": zod.string().min(1).optional(),
   "description": zod.string().nullish(),
   "location": zod.string().nullish(),
-  "wallSystem": zod.enum(['bahareque', 'tapia_pisada', 'adobe', 'guadua_vista']).optional(),
+  "wallSystem": zod.enum(['bahareque', 'tapia_pisada', 'adobe', 'guadua_vista', 'mixta']).optional(),
   "roofType": zod.enum(['teja_barro', 'palma', 'zinc', 'techo_verde']).optional(),
   "status": zod.enum(['diseno', 'cotizado', 'construccion', 'terminado']).optional(),
   "notes": zod.string().nullish(),
@@ -135,7 +151,8 @@ export const UpdateProjectBody = zod.object({
   "canStay": zod.boolean().nullish(),
   "canCook": zod.boolean().nullish(),
   "numPeople": zod.int().nullish(),
-  "targetMonths": zod.number().nullish()
+  "targetMonths": zod.number().nullish(),
+  "referenceLinks": zod.array(zod.string().max(updateProjectBodyReferenceLinksItemMax).regex(updateProjectBodyReferenceLinksItemRegExp)).max(updateProjectBodyReferenceLinksMax).nullish()
 })
 
 export const UpdateProjectResponse = zod.object({
@@ -143,7 +160,7 @@ export const UpdateProjectResponse = zod.object({
   "name": zod.string(),
   "description": zod.string().nullish(),
   "location": zod.string().nullish(),
-  "wallSystem": zod.enum(['bahareque', 'tapia_pisada', 'adobe', 'guadua_vista']).describe('Wall construction system'),
+  "wallSystem": zod.enum(['bahareque', 'tapia_pisada', 'adobe', 'guadua_vista', 'mixta']).describe('Wall construction system'),
   "roofType": zod.enum(['teja_barro', 'palma', 'zinc', 'techo_verde']),
   "status": zod.enum(['diseno', 'cotizado', 'construccion', 'terminado']),
   "notes": zod.string().nullish(),
@@ -154,6 +171,7 @@ export const UpdateProjectResponse = zod.object({
   "canCook": zod.boolean().nullish().describe('Whether the crew can cook on site'),
   "numPeople": zod.int().nullish().describe('Number of people the house is for'),
   "targetMonths": zod.number().nullish().describe('Target construction time in months'),
+  "referenceLinks": zod.array(zod.string()).nullish().describe('Video or web reference links for the project'),
   "createdAt": zod.string()
 })
 
