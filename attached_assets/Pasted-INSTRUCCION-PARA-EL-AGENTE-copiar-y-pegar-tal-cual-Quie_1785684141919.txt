@@ -1,0 +1,50 @@
+INSTRUCCION PARA EL AGENTE (copiar y pegar tal cual)
+
+Quiero que construyas un PLAN B - KIT DE EMERGENCIA para esta app, un sistema de failover entre dos servidores. Ya lo hice en otra app mia y funciono perfecto. Sigue estas instrucciones al pie de la letra y en este orden.
+
+OBJETIVO
+Tener la misma app corriendo en dos casas: Railway como servidor PRIMARIO y Replit como RESPALDO y desarrollo. Si una casa se cae, entro a la otra por una cabina de emergencia en /api/planb y con un boton muevo el bot de Telegram al servidor vivo.
+
+REFERENCIA DE CODIGO
+El modulo ya existe y esta probado en mi repo github.com/tahamuzza-ship-it/Meta-Agente-Sgn en el archivo artifacts/api-server/src/routes/planb.ts. Usalo como plantilla y adaptalo a esta app (nombre, URLs, rutas).
+
+FASE 0 - EL BOT (hacer PRIMERO)
+1. Necesito un bot de Telegram NUEVO y EXCLUSIVO para esta app. Regla de oro: una app igual un bot, porque un bot solo puede tener UN webhook. Jamas compartir bot con otra app.
+2. Yo lo creo en BotFather con /newbot y te doy el token por el formulario seguro de secrets, nunca en el chat.
+3. Antes de usarlo, verifica con getWebhookInfo que el campo url este vacio (bot libre).
+4. Yo le escribo hola al bot, y tu detectas mi chat ID con getUpdates.
+5. Guarda: TELEGRAM_BOT_TOKEN como secret, TELEGRAM_CHAT_ID como variable.
+
+FASE 1 - LA CABINA /api/planb
+Debe tener exactamente esto:
+- Login en 2 pasos: frase secreta, luego codigo OTP de 6 digitos que me llega por el bot, sesion de 15 minutos.
+- Estado en vivo de los dos servidores (vivo o caido, con latencia).
+- Boton ACTIVAR RESPALDO REPLIT y boton VOLVER A RAILWAY (primario). Cada boton mueve el webhook del bot al servidor elegido y me avisa por Telegram.
+- Vault con la frase y el token del bot (revelar y copiar), acepto ese riesgo.
+- Comandos curl manuales por si la cabina no abre.
+- El bot responde STATUS diciendo desde que servidor habla.
+Seguridad obligatoria: webhook de Telegram con verificacion de firma secreta, limite de 5 intentos de frase por IP cada 10 minutos, OTP con expiracion, el bot solo responde en mi chat autorizado.
+Importante: monta la cabina ANTES de cualquier login de la app (tiene su propia autenticacion) y, si existe un modo reserva o standby para Railway, la cabina debe servirse tambien en ese modo.
+La URL de Railway va en una variable PLANB_RAILWAY_URL, nunca quemada en el codigo.
+La frase de acceso la defino yo y te la paso como secret (LEAD_ARCHITECT_KEY o PLANB_AUTH_PHRASE).
+
+FASE 2 - RAILWAY
+6. Yo creo el proyecto en railway.app: New Project, Deploy from GitHub repo, el repo de ESTA app, rama main, auto deploy. Genero el dominio en Settings, Networking y te paso la URL.
+7. Yo copio en Railway TODAS las variables: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, la frase, PLANB_RAILWAY_URL y las demas de la app. Railway no hereda nada de Replit, recuerdamelo.
+
+FASE 3 - VERIFICACION (no saltarse ninguna)
+8. Abrir la URL de Railway mas /api/planb y confirmar que se ve la cabina con el nombre de ESTA app. Ojo: que Railway diga Online no significa que corre el codigo nuevo, verifica la fecha del deploy o pideme un Redeploy.
+9. Probar frase equivocada (debe responder Frase incorrecta), luego login completo con OTP.
+10. Los dos servidores en VIVO. Republicar en Replit para que el respaldo tambien tenga la cabina.
+
+FASE 4 - SIMULACRO FINAL
+11. Pulsar VOLVER A RAILWAY, STATUS debe responder Railway. Luego activar respaldo, STATUS responde Replit, y volver a Railway. Con eso queda certificado.
+
+REGLAS DE ORO (no negociables)
+- Una app igual un bot.
+- Un Railway igual una app, etiquetar cada URL con el nombre de la app.
+- Online no significa actualizado.
+- Cada servidor con su copia completa de variables.
+- Secretos jamas en texto plano en el chat, solo por formulario seguro.
+
+Al final entregame un informe de todo lo que hiciste, en texto plano para poder copiarlo a Telegram.
