@@ -1,6 +1,37 @@
+import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
 import { Shell } from '@/components/layout/Shell';
+
+// Si algo falla, en vez de pantalla en blanco mostramos el error para poder arreglarlo.
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 24, maxWidth: 640, margin: '40px auto', fontFamily: 'sans-serif' }}>
+          <h1 style={{ fontSize: 22, marginBottom: 8 }}>Ocurrió un error en la aplicación</h1>
+          <p style={{ marginBottom: 12 }}>Toma una foto de esta pantalla o copia este mensaje:</p>
+          <pre style={{ background: '#fee', border: '1px solid #f99', borderRadius: 8, padding: 12, whiteSpace: 'pre-wrap', fontSize: 12 }}>
+            {String(this.state.error?.message || this.state.error)}
+            {'\n\n'}
+            {String((this.state.error as Error)?.stack || '').slice(0, 1500)}
+          </pre>
+          <button
+            onClick={() => window.location.reload()}
+            style={{ marginTop: 16, padding: '10px 20px', borderRadius: 8, border: 'none', background: '#16a34a', color: 'white', fontSize: 16, cursor: 'pointer' }}
+          >
+            Recargar la página
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 import Dashboard from '@/pages/dashboard';
 import ProjectDetail from '@/pages/project-detail';
@@ -37,13 +68,15 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-        <Shell>
-          <Router />
-        </Shell>
-      </WouterRouter>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+          <Shell>
+            <Router />
+          </Shell>
+        </WouterRouter>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
