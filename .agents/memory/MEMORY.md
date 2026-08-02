@@ -1,2 +1,3 @@
 - [Orval zod codegen import fix](zod-v4-codegen.md) — codegen must sed-rewrite generated zod import to `zod/v4` or typecheck fails with `zod.int` TS2339.
+- [Railway deploy config](railway-deploy.md) — exact Nixpacks combo that builds this monorepo on Railway + Plan B failover setup; changing any piece breaks the deploy.
 - [WebGL screenshot limit](webgl-screenshot-limit.md) — the Screenshot browser has no WebGL; three.js scenes can't be visually verified via screenshots.
