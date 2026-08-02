@@ -15,6 +15,26 @@ import {
 
 const router: IRouter = Router();
 
+const RUN_KINDS = new Set(["cable", "tuberia"]);
+const LAYER_KINDS: Record<string, Set<string>> = {
+  electrica: new Set(["toma", "interruptor", "lampara", "tablero", "cable"]),
+  agua: new Set(["llave", "ducha", "desague", "tanque", "tuberia"]),
+};
+
+/** Valida coherencia capa↔tipo y cantidad de puntos según el tipo. */
+function installationShapeError(layer: string, kind: string, points: unknown[]): string | null {
+  if (!LAYER_KINDS[layer]?.has(kind)) {
+    return `El tipo "${kind}" no pertenece a la capa "${layer}"`;
+  }
+  if (RUN_KINDS.has(kind) && points.length < 2) {
+    return "Un recorrido necesita al menos 2 puntos";
+  }
+  if (!RUN_KINDS.has(kind) && points.length !== 1) {
+    return "Un símbolo debe tener exactamente 1 punto";
+  }
+  return null;
+}
+
 router.get("/projects/:id/installations", async (req, res): Promise<void> => {
   const params = ListInstallationsParams.safeParse(req.params);
   if (!params.success) {
@@ -38,6 +58,15 @@ router.post("/projects/:id/installations", async (req, res): Promise<void> => {
   const parsed = CreateInstallationBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const shapeError = installationShapeError(
+    parsed.data.layer,
+    parsed.data.kind,
+    parsed.data.points,
+  );
+  if (shapeError) {
+    res.status(400).json({ error: shapeError });
     return;
   }
   const [project] = await db
@@ -65,6 +94,25 @@ router.patch("/installations/:id", async (req, res): Promise<void> => {
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
+  }
+  if (parsed.data.points) {
+    const [existing] = await db
+      .select()
+      .from(installationsTable)
+      .where(eq(installationsTable.id, params.data.id));
+    if (!existing) {
+      res.status(404).json({ error: "Elemento no encontrado" });
+      return;
+    }
+    const shapeError = installationShapeError(
+      existing.layer,
+      existing.kind,
+      parsed.data.points,
+    );
+    if (shapeError) {
+      res.status(400).json({ error: shapeError });
+      return;
+    }
   }
   const [row] = await db
     .update(installationsTable)

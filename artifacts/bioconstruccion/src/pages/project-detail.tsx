@@ -587,7 +587,13 @@ export default function ProjectDetail() {
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   
   const [terrainDialogOpen, setTerrainDialogOpen] = useState(false);
-  const [selectedFloor, setSelectedFloor] = useState<number>(1);
+  const [selectedFloor, setSelectedFloorRaw] = useState<number>(1);
+  // Al cambiar de piso se descarta cualquier recorrido a medio dibujar,
+  // para no guardar puntos de un piso en el otro.
+  const setSelectedFloor = (floor: number) => {
+    setSelectedFloorRaw(floor);
+    setDraftPoints([]);
+  };
   const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
 
   // Instalaciones eléctricas y de agua sobre el plano
