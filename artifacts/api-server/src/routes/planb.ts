@@ -233,6 +233,23 @@ router.post("/planb/telegram-webhook", async (req, res) => {
   if (!chatId || chatId !== CHAT_ID) return; // solo chat autorizado
   if (text === "STATUS" || text === "/STATUS") {
     await notify(`📡 ${APP_NAME} hablando desde: ${SERVER_NAME}`);
+    return;
+  }
+  // Reenvío a Make: los demás mensajes se pasan al escenario de Make tal
+  // cual llegan de Telegram (update completo), para que la automatización
+  // original siga funcionando sin quitarle el webhook al Plan B.
+  const makeUrl = process.env["MAKE_FORWARD_URL"];
+  if (makeUrl) {
+    try {
+      await fetch(makeUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req.body),
+        signal: AbortSignal.timeout(8000),
+      });
+    } catch {
+      /* reenvío best-effort */
+    }
   }
 });
 
