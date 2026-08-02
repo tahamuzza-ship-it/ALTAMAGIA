@@ -53,48 +53,59 @@ const terrainSchema = z.object({
   targetMonths: z.coerce.number().nullable().optional(),
 });
 
-// ---- Instalaciones (capas eléctrica y agua sobre el plano) ----
-type InstallTool = { layer: "electrica" | "agua"; kind: Installation["kind"] } | null;
+// ---- Instalaciones (capas eléctrica, agua limpia y aguas sucias sobre el plano) ----
+type InstallLayer = "electrica" | "agua" | "sanitaria";
+type InstallTool = { layer: InstallLayer; kind: Installation["kind"] } | null;
 
-const INSTALL_STYLES: Record<string, { color: string; label: string; short: string; run?: boolean }> = {
-  toma:        { color: "#d97706", label: "Toma corriente", short: "T" },
-  interruptor: { color: "#d97706", label: "Interruptor", short: "I" },
-  lampara:     { color: "#f59e0b", label: "Lámpara", short: "L" },
-  tablero:     { color: "#b45309", label: "Tablero eléctrico", short: "TB" },
-  cable:       { color: "#d97706", label: "Cable (recorrido)", short: "~", run: true },
-  llave:       { color: "#2563eb", label: "Llave de agua", short: "LL" },
-  ducha:       { color: "#2563eb", label: "Ducha", short: "D" },
-  desague:     { color: "#64748b", label: "Desagüe", short: "DS" },
-  tanque:      { color: "#0891b2", label: "Tanque", short: "TQ" },
-  tuberia:     { color: "#2563eb", label: "Tubería (recorrido)", short: "≈", run: true },
+const LAYER_COLORS: Record<InstallLayer, string> = {
+  electrica: "#d97706", // ámbar
+  agua: "#2563eb",      // azul
+  sanitaria: "#7c4a21", // café (aguas sucias)
 };
 
+const INSTALL_STYLES: Record<string, { label: string; short: string; run?: boolean }> = {
+  toma:        { label: "Toma corriente", short: "T" },
+  interruptor: { label: "Interruptor", short: "I" },
+  lampara:     { label: "Lámpara", short: "L" },
+  tablero:     { label: "Tablero eléctrico", short: "TB" },
+  cable:       { label: "Cable (recorrido)", short: "~", run: true },
+  llave:       { label: "Llave de agua", short: "LL" },
+  ducha:       { label: "Ducha", short: "D" },
+  desague:     { label: "Desagüe", short: "DS" },
+  tanque:      { label: "Tanque", short: "TQ" },
+  tuberia:     { label: "Tubería (recorrido)", short: "≈", run: true },
+};
+
+const installColor = (layer: string) => LAYER_COLORS[layer as InstallLayer] ?? "#888";
+
 const ELECTRICA_KINDS = ["toma", "interruptor", "lampara", "tablero", "cable"] as const;
-const AGUA_KINDS = ["llave", "ducha", "desague", "tanque", "tuberia"] as const;
+const AGUA_KINDS = ["llave", "ducha", "tanque", "tuberia"] as const;
+const SANITARIA_KINDS = ["desague", "ducha", "tuberia"] as const;
 
 function InstallationsOverlay({ installations, visibleLayers, draftPoints, draftTool, onElementClick }: {
   installations: Installation[];
-  visibleLayers: { electrica: boolean; agua: boolean };
+  visibleLayers: Record<InstallLayer, boolean>;
   draftPoints: { x: number; y: number }[];
   draftTool: InstallTool;
   onElementClick: (inst: Installation) => void;
 }) {
-  const visible = installations.filter(i => visibleLayers[i.layer]);
+  const visible = installations.filter(i => visibleLayers[i.layer as InstallLayer]);
   return (
     <g>
       {visible.map(inst => {
-        const st = INSTALL_STYLES[inst.kind] ?? { color: "#888", short: "?" };
+        const st = INSTALL_STYLES[inst.kind] ?? { label: inst.kind, short: "?" };
+        const color = installColor(inst.layer);
         if (st.run && inst.points.length >= 2) {
           return (
             <g key={inst.id} className="cursor-pointer" onPointerDown={(e) => { e.stopPropagation(); }} onClick={(e) => { e.stopPropagation(); onElementClick(inst); }}>
               <polyline
                 points={inst.points.map(p => `${p.x},${p.y}`).join(" ")}
-                fill="none" stroke={st.color} strokeWidth={0.12}
-                strokeDasharray={inst.layer === "agua" ? "0.3 0.15" : undefined}
+                fill="none" stroke={color} strokeWidth={0.12}
+                strokeDasharray={inst.layer !== "electrica" ? "0.3 0.15" : undefined}
                 strokeLinecap="round" strokeLinejoin="round" opacity={0.85}
               />
               {inst.points.map((p, i) => (
-                <circle key={i} cx={p.x} cy={p.y} r={0.12} fill={st.color} />
+                <circle key={i} cx={p.x} cy={p.y} r={0.12} fill={color} />
               ))}
             </g>
           );
@@ -103,9 +114,9 @@ function InstallationsOverlay({ installations, visibleLayers, draftPoints, draft
         if (!p) return null;
         return (
           <g key={inst.id} className="cursor-pointer" onPointerDown={(e) => { e.stopPropagation(); }} onClick={(e) => { e.stopPropagation(); onElementClick(inst); }}>
-            <circle cx={p.x} cy={p.y} r={0.35} fill="white" stroke={st.color} strokeWidth={0.08} />
+            <circle cx={p.x} cy={p.y} r={0.35} fill="white" stroke={color} strokeWidth={0.08} />
             <text x={p.x} y={p.y + 0.02} textAnchor="middle" dominantBaseline="middle"
-              style={{ fontSize: "0.3px", fill: st.color, fontWeight: 700 }} className="select-none pointer-events-none">
+              style={{ fontSize: "0.3px", fill: color, fontWeight: 700 }} className="select-none pointer-events-none">
               {st.short}
             </text>
           </g>
@@ -115,11 +126,11 @@ function InstallationsOverlay({ installations, visibleLayers, draftPoints, draft
         <g className="pointer-events-none">
           <polyline
             points={draftPoints.map(p => `${p.x},${p.y}`).join(" ")}
-            fill="none" stroke={INSTALL_STYLES[draftTool.kind]?.color ?? "#888"}
+            fill="none" stroke={installColor(draftTool.layer)}
             strokeWidth={0.12} strokeDasharray="0.2 0.2" opacity={0.7}
           />
           {draftPoints.map((p, i) => (
-            <circle key={i} cx={p.x} cy={p.y} r={0.15} fill={INSTALL_STYLES[draftTool.kind]?.color ?? "#888"} />
+            <circle key={i} cx={p.x} cy={p.y} r={0.15} fill={installColor(draftTool.layer)} />
           ))}
         </g>
       )}
@@ -130,7 +141,7 @@ function InstallationsOverlay({ installations, visibleLayers, draftPoints, draft
 function PlanViewer({ rooms, selectedFloor, onRoomClick, onRoomDrop, installations, visibleLayers, activeTool, draftPoints, onPlanTap, onInstallationClick }: {
   rooms: Room[], selectedFloor: number, onRoomClick: (r: Room) => void, onRoomDrop: (r: Room, posX: number, posY: number) => void,
   installations: Installation[],
-  visibleLayers: { electrica: boolean; agua: boolean },
+  visibleLayers: Record<InstallLayer, boolean>,
   activeTool: InstallTool,
   draftPoints: { x: number; y: number }[],
   onPlanTap: (x: number, y: number) => void,
@@ -600,7 +611,7 @@ export default function ProjectDetail() {
   const { data: installations } = useListInstallations(projectId);
   const createInstallation = useCreateInstallation();
   const deleteInstallation = useDeleteInstallation();
-  const [visibleLayers, setVisibleLayers] = useState<{ electrica: boolean; agua: boolean }>({ electrica: true, agua: true });
+  const [visibleLayers, setVisibleLayers] = useState<Record<InstallLayer, boolean>>({ electrica: true, agua: true, sanitaria: true });
   const [activeTool, setActiveTool] = useState<InstallTool>(null);
   const [draftPoints, setDraftPoints] = useState<{ x: number; y: number }[]>([]);
 
@@ -638,7 +649,7 @@ export default function ProjectDetail() {
     }
   };
 
-  const selectTool = (layer: "electrica" | "agua", kind: Installation["kind"]) => {
+  const selectTool = (layer: InstallLayer, kind: Installation["kind"]) => {
     setDraftPoints([]);
     setActiveTool(prev => (prev && prev.layer === layer && prev.kind === kind ? null : { layer, kind }));
     setVisibleLayers(prev => ({ ...prev, [layer]: true }));
@@ -1075,7 +1086,7 @@ export default function ProjectDetail() {
                     </div>
                   ) : viewMode === "3d" ? (
                     <Suspense fallback={<div className="flex items-center justify-center min-h-[500px]"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
-                      <PlanViewer3DScene rooms={rooms || []} wallSystem={project.wallSystem} roofType={project.roofType} />
+                      <PlanViewer3DScene rooms={rooms || []} wallSystem={project.wallSystem} roofType={project.roofType} installations={installations || []} />
                     </Suspense>
                   ) : (
                     <PlanViewer
@@ -1106,7 +1117,13 @@ export default function ProjectDetail() {
                         variant={visibleLayers.agua ? "secondary" : "ghost"} size="sm" className="h-7 text-xs px-3"
                         onClick={() => setVisibleLayers(p => ({ ...p, agua: !p.agua }))}
                       >
-                        💧 Agua {visibleLayers.agua ? "" : "(oculta)"}
+                        💧 Agua limpia {visibleLayers.agua ? "" : "(oculta)"}
+                      </Button>
+                      <Button
+                        variant={visibleLayers.sanitaria ? "secondary" : "ghost"} size="sm" className="h-7 text-xs px-3"
+                        onClick={() => setVisibleLayers(p => ({ ...p, sanitaria: !p.sanitaria }))}
+                      >
+                        🚽 Aguas sucias {visibleLayers.sanitaria ? "" : "(oculta)"}
                       </Button>
                       {activeTool && (
                         <Badge variant="outline" className="text-xs">
@@ -1127,11 +1144,21 @@ export default function ProjectDetail() {
                       <span className="mx-1 text-muted-foreground">|</span>
                       {AGUA_KINDS.map(k => (
                         <Button key={k}
-                          variant={activeTool?.kind === k ? "default" : "outline"} size="sm"
+                          variant={activeTool?.kind === k && activeTool.layer === "agua" ? "default" : "outline"} size="sm"
                           className="h-7 text-xs px-2"
                           onClick={() => selectTool("agua", k)}
                         >
                           {INSTALL_STYLES[k].short} {INSTALL_STYLES[k].label.split(" ")[0]}
+                        </Button>
+                      ))}
+                      <span className="mx-1 text-muted-foreground">|</span>
+                      {SANITARIA_KINDS.map(k => (
+                        <Button key={`s-${k}`}
+                          variant={activeTool?.kind === k && activeTool.layer === "sanitaria" ? "default" : "outline"} size="sm"
+                          className="h-7 text-xs px-2"
+                          onClick={() => selectTool("sanitaria", k)}
+                        >
+                          {INSTALL_STYLES[k].short} {INSTALL_STYLES[k].label.split(" ")[0]} 🚽
                         </Button>
                       ))}
                     </div>

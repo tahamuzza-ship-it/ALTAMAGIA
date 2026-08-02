@@ -267,7 +267,7 @@ export const ListInstallationsResponseItem = zod.object({
   "id": zod.int(),
   "projectId": zod.int(),
   "floor": zod.int(),
-  "layer": zod.enum(['electrica', 'agua']),
+  "layer": zod.enum(['electrica', 'agua', 'sanitaria']),
   "kind": zod.enum(['toma', 'interruptor', 'lampara', 'tablero', 'cable', 'llave', 'ducha', 'desague', 'tanque', 'tuberia']),
   "points": zod.array(zod.object({
   "x": zod.number().describe('X in meters on the floor plan'),
@@ -293,7 +293,7 @@ export const createInstallationBodyPointsMax = 100;
 
 export const CreateInstallationBody = zod.object({
   "floor": zod.int().min(1).max(createInstallationBodyFloorMax).default(createInstallationBodyFloorDefault),
-  "layer": zod.enum(['electrica', 'agua']),
+  "layer": zod.enum(['electrica', 'agua', 'sanitaria']),
   "kind": zod.enum(['toma', 'interruptor', 'lampara', 'tablero', 'cable', 'llave', 'ducha', 'desague', 'tanque', 'tuberia']),
   "points": zod.array(zod.object({
   "x": zod.number().describe('X in meters on the floor plan'),
@@ -309,7 +309,7 @@ export const CreateInstallationResponse = zod.object({
   "id": zod.int(),
   "projectId": zod.int(),
   "floor": zod.int(),
-  "layer": zod.enum(['electrica', 'agua']),
+  "layer": zod.enum(['electrica', 'agua', 'sanitaria']),
   "kind": zod.enum(['toma', 'interruptor', 'lampara', 'tablero', 'cable', 'llave', 'ducha', 'desague', 'tanque', 'tuberia']),
   "points": zod.array(zod.object({
   "x": zod.number().describe('X in meters on the floor plan'),
@@ -347,7 +347,7 @@ export const UpdateInstallationResponse = zod.object({
   "id": zod.int(),
   "projectId": zod.int(),
   "floor": zod.int(),
-  "layer": zod.enum(['electrica', 'agua']),
+  "layer": zod.enum(['electrica', 'agua', 'sanitaria']),
   "kind": zod.enum(['toma', 'interruptor', 'lampara', 'tablero', 'cable', 'llave', 'ducha', 'desague', 'tanque', 'tuberia']),
   "points": zod.array(zod.object({
   "x": zod.number().describe('X in meters on the floor plan'),

@@ -408,6 +408,7 @@ export type InstallationLayer = typeof InstallationLayer[keyof typeof Installati
 export const InstallationLayer = {
   electrica: 'electrica',
   agua: 'agua',
+  sanitaria: 'sanitaria',
 } as const;
 
 export type InstallationKind = typeof InstallationKind[keyof typeof InstallationKind];
@@ -445,6 +446,7 @@ export type InstallationInputLayer = typeof InstallationInputLayer[keyof typeof 
 export const InstallationInputLayer = {
   electrica: 'electrica',
   agua: 'agua',
+  sanitaria: 'sanitaria',
 } as const;
 
 export type InstallationInputKind = typeof InstallationInputKind[keyof typeof InstallationInputKind];

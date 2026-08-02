@@ -12,4 +12,5 @@ export type InstallationInputLayer = typeof InstallationInputLayer[keyof typeof 
 export const InstallationInputLayer = {
   electrica: 'electrica',
   agua: 'agua',
+  sanitaria: 'sanitaria',
 } as const;

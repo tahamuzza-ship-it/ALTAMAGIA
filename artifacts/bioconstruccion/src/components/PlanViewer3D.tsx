@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Text } from '@react-three/drei';
 import Scenery3D from './Scenery3D';
-import { Room } from '@workspace/api-client-react';
+import { Room, Installation } from '@workspace/api-client-react';
 import { Vector3, BufferGeometry, BufferAttribute, DoubleSide } from 'three';
 import { Button } from '@/components/ui/button';
 import { Footprints, X, Info } from 'lucide-react';
@@ -945,9 +945,93 @@ function LookPad({ lookRef }: { lookRef: React.MutableRefObject<TouchInput> }) {
   );
 }
 
+// ---- Redes de instalaciones en 3D (en crudo: por dónde van los tubos y cables) ----
+const NET_COLORS: Record<string, string> = {
+  electrica: '#f59e0b', // ámbar
+  agua: '#2563eb',      // azul (agua limpia)
+  sanitaria: '#7c4a21', // café (aguas sucias)
+};
+// Altura a la que corre cada red: la eléctrica por lo alto de los muros,
+// el agua limpia a media pared baja, y las aguas sucias dentro de la plancha.
+const NET_RUN_HEIGHT: Record<string, number> = { electrica: 2.2, agua: 0.45, sanitaria: 0.12 };
+// Altura de cada aparato/símbolo
+const NET_SYMBOL_HEIGHT: Record<string, number> = {
+  toma: 0.4, interruptor: 1.2, lampara: 2.35, tablero: 1.5,
+  llave: 0.95, ducha: 1.9, desague: 0.08, tanque: 0.9,
+};
+
+function PipeSegment({ a, b, y, color, radius }: { a: { x: number; y: number }, b: { x: number; y: number }, y: number, color: string, radius: number }) {
+  const dx = b.x - a.x;
+  const dz = b.y - a.y;
+  const len = Math.hypot(dx, dz);
+  if (len < 0.01) return null;
+  const angle = Math.atan2(dx, dz); // rotación alrededor de Y, cilindro tumbado sobre Z
+  return (
+    <group position={[(a.x + b.x) / 2, y, (a.y + b.y) / 2]} rotation={[0, angle, 0]}>
+      <mesh castShadow rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[radius, radius, len, 8]} />
+        <meshStandardMaterial color={color} roughness={0.6} emissive={color} emissiveIntensity={0.25} />
+      </mesh>
+    </group>
+  );
+}
+
+function Installations3D({ installations, maxH1 }: { installations: Installation[], maxH1: number }) {
+  return (
+    <group>
+      {installations.map(inst => {
+        const color = NET_COLORS[inst.layer] ?? '#888';
+        const baseY = inst.floor === 2 ? maxH1 + 0.1 : 0;
+        const isRun = inst.points.length >= 2;
+        if (isRun) {
+          const y = baseY + (NET_RUN_HEIGHT[inst.layer] ?? 0.3);
+          const radius = inst.layer === 'sanitaria' ? 0.06 : inst.layer === 'agua' ? 0.035 : 0.025;
+          return (
+            <group key={inst.id}>
+              {inst.points.slice(0, -1).map((p, i) => (
+                <PipeSegment key={i} a={p} b={inst.points[i + 1]} y={y} color={color} radius={radius} />
+              ))}
+              {/* bajantes verticales en los extremos, para ver que la red baja/sube por la pared */}
+              {[inst.points[0], inst.points[inst.points.length - 1]].map((p, i) => (
+                <mesh key={`v${i}`} position={[p.x, baseY + (NET_RUN_HEIGHT[inst.layer] ?? 0.3) / 2, p.y]}>
+                  <cylinderGeometry args={[radius, radius, NET_RUN_HEIGHT[inst.layer] ?? 0.3, 8]} />
+                  <meshStandardMaterial color={color} roughness={0.6} transparent opacity={0.6} />
+                </mesh>
+              ))}
+            </group>
+          );
+        }
+        const p = inst.points[0];
+        if (!p) return null;
+        const y = baseY + (NET_SYMBOL_HEIGHT[inst.kind] ?? 0.5);
+        return (
+          <group key={inst.id} position={[p.x, y, p.y]}>
+            {inst.kind === 'tanque' ? (
+              <mesh castShadow>
+                <cylinderGeometry args={[0.35, 0.35, 0.9, 12]} />
+                <meshStandardMaterial color={color} roughness={0.5} />
+              </mesh>
+            ) : inst.kind === 'tablero' ? (
+              <mesh castShadow>
+                <boxGeometry args={[0.35, 0.5, 0.12]} />
+                <meshStandardMaterial color={color} roughness={0.5} />
+              </mesh>
+            ) : (
+              <mesh castShadow>
+                <sphereGeometry args={[0.12, 10, 10]} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} />
+              </mesh>
+            )}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
 // Reusable scratch vector (avoids per-frame allocation)
 
-export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { rooms: Room[], wallSystem: string, roofType: string }) {
+export default function PlanViewer3DScene({ rooms, wallSystem, roofType, installations = [] }: { rooms: Room[], wallSystem: string, roofType: string, installations?: Installation[] }) {
   const [walkMode, setWalkMode] = useState(false);
   const [roofMode, setRoofMode] = useState<'cerrado' | 'cruzado' | 'abierto'>('cerrado');
   const [showInfo, setShowInfo] = useState(false);
@@ -1067,6 +1151,10 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType }: { roo
               <Room3D key={r.id} room={r} maxH1={maxH1} maxH2={maxH2} wallSystem={wallSystem} stairHole={stair?.hole} />
             ))}
           {stair && <Escalera x={stair.x} zStart={stair.zStart} rise={stair.rise} run={stair.run} />}
+          {/* Redes de instalaciones (eléctrica, agua limpia, aguas sucias) */}
+          <Installations3D installations={installations} maxH1={maxH1} />
+        </group>
+        <group>
           {entrada && (
             <>
               <EntradaPrincipal x={entrada.x} z={entrada.z} />

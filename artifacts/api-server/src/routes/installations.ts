@@ -19,6 +19,7 @@ const RUN_KINDS = new Set(["cable", "tuberia"]);
 const LAYER_KINDS: Record<string, Set<string>> = {
   electrica: new Set(["toma", "interruptor", "lampara", "tablero", "cable"]),
   agua: new Set(["llave", "ducha", "desague", "tanque", "tuberia"]),
+  sanitaria: new Set(["desague", "ducha", "tuberia"]),
 };
 
 /** Valida coherencia capa↔tipo y cantidad de puntos según el tipo. */

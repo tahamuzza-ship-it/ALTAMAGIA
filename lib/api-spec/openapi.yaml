@@ -575,7 +575,7 @@ components:
         floor: { type: integer }
         layer:
           type: string
-          enum: [electrica, agua]
+          enum: [electrica, agua, sanitaria]
         kind:
           type: string
           enum: [toma, interruptor, lampara, tablero, cable, llave, ducha, desague, tanque, tuberia]
@@ -592,7 +592,7 @@ components:
         floor: { type: integer, minimum: 1, maximum: 2, default: 1 }
         layer:
           type: string
-          enum: [electrica, agua]
+          enum: [electrica, agua, sanitaria]
         kind:
           type: string
           enum: [toma, interruptor, lampara, tablero, cable, llave, ducha, desague, tanque, tuberia]
