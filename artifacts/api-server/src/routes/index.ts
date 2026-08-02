@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import planbRouter from "./planb";
 import healthRouter from "./health";
 import projectsRouter from "./projects";
 import materialsRouter from "./materials";
@@ -6,6 +7,8 @@ import dashboardRouter from "./dashboard";
 
 const router: IRouter = Router();
 
+// Plan B se monta primero: la cabina tiene su propia autenticación
+router.use(planbRouter);
 router.use(healthRouter);
 router.use(projectsRouter);
 router.use(materialsRouter);
