@@ -1,0 +1,65 @@
+Encontré el servicio con el deployment fallido. Voy a obtener los logs de build y deploy:
+
+Searched build logs
+
+Hide result
+09:30:35
+deleting '/nix/store/v9c1s50x7magpiqgycxxkn36avzbcg0g-krb5-1.21.3-lib'
+09:30:35
+deleting '/nix/store/8675pnfr4fqnwv4pzjl67hdwls4q13aa-libssh2-1.11.1'
+09:30:35
+deleting '/nix/store/9l9n7a0v4aibcz0sgd0crs209an9p7dz-openssl-3.3.2'
+09:30:35
+deleting '/nix/store/9cwwj1c9csmc85l2cqzs3h9hbf1vwl6c-gnutar-1.35'
+09:30:35
+deleting '/nix/store/srfxqk119fijwnprgsqvn68ys9kiw0bn-patchelf-0.15.0'
+09:30:35
+deleting '/nix/store/mglixp03lsp0w986svwdvm7vcy17rdax-bzip2-1.0.8-bin'
+09:30:35
+deleting '/nix/store/ivl2v8rgg7qh1jkj5pwpqycax3rc2hnl-bzip2-1.0.8'
+09:30:35
+deleting '/nix/store/j7p46r8v9gcpbxx89pbqlh61zhd33gzv-binutils-2.43.1'
+09:30:35
+deleting '/nix/store/df2a8k58k00f2dh2x930dg6xs6g6mliv-binutils-2.43.1-lib'
+09:30:35
+deleting '/nix/store/d29r1bdmlvwmj52apgcdxfl1mm9c5782-update-autotools-gnu-config-scripts-hook'
+...and 40 more logs
+Searched deploy logs
+
+Hide result
+No logs found
+Diagnosed deployment
+❌ Razón del fallo del deployment
+Error: Fallo en la etapa de build
+
+Causa específica: Conflicto en la configuración de pnpm - El valor de overrides en el archivo de proyecto no coincide con lo que está en el pnpm-lock.yaml
+Últimas líneas de error:
+Build Logs:
+
+ERR_PNPM_LOCKFILE_CONFIG_MISMATCH Cannot proceed with the frozen installation. 
+The current "overrides" configuration doesn't match the value found in the lockfile
+
+Update your lockfile using "pnpm install --no-frozen-lockfile"
+
+Build Failed: build daemon returned an error < failed to solve: process "/bin/bash 
+-ol pipefail -c pnpm i --frozen-lockfile" did not complete successfully: exit code: 1 >
+
+Deploy Logs: (vacío - nunca llegó a la etapa de deployment)
+
+🔧 Solución
+El problema está en tu repo. Necesitas sincronizar tu pnpm-lock.yaml con tu pnpm-workspace.yaml o package.json. Tienes dos opciones:
+
+Opción rápida: Regenera el lockfile localmente
+
+cd tu-repo
+pnpm install --no-frozen-lockfile
+git add pnpm-lock.yaml
+git commit -m "Update pnpm lockfile"
+git push
+
+Opción en Railway: Desactiva la flag --frozen-lockfile en tu build si prefieres instalar directamente.
+
+Una vez que sincronices el lockfile, el deployment debería pasar la etapa de build.
+
+SIII???
+
