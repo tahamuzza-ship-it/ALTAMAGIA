@@ -5,7 +5,9 @@ description: Hard-won config to build/run this workspace on Railway (Nixpacks) a
 
 # Railway deploy (Nixpacks) — what finally worked
 
-App is live at https://workspaceapi-server-production-01d8.up.railway.app (repo tahamuzza-ship-it/ALTAMAGIA, branch main, auto-deploy may need manual Redeploy).
+App is live at https://workspaceapi-server-production-01d8.up.railway.app (branch main, auto-deploy may need manual Redeploy).
+- **Railway project name: NATURAL-EXPLORATION** (service @workspace/api-server + Postgres).
+- **GitHub repo: tahamuzza-ship-it/ALTAMAGIA** (remote `origin`; user created it via Git pane).
 
 Required combo (each fixed a distinct failure):
 - `packageManager: pnpm@10.26.1` in root package.json — Nixpacks otherwise picks an old pnpm that can't read the workspace `overrides` (ERR_PNPM_LOCKFILE_CONFIG_MISMATCH).
