@@ -253,6 +253,120 @@ export const CreateRoomResponse = zod.object({
 
 
 /**
+ * @summary List installation elements of a project
+ */
+export const ListInstallationsParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const listInstallationsResponsePointsMax = 100;
+
+
+
+export const ListInstallationsResponseItem = zod.object({
+  "id": zod.int(),
+  "projectId": zod.int(),
+  "floor": zod.int(),
+  "layer": zod.enum(['electrica', 'agua']),
+  "kind": zod.enum(['toma', 'interruptor', 'lampara', 'tablero', 'cable', 'llave', 'ducha', 'desague', 'tanque', 'tuberia']),
+  "points": zod.array(zod.object({
+  "x": zod.number().describe('X in meters on the floor plan'),
+  "y": zod.number().describe('Y in meters on the floor plan')
+})).min(1).max(listInstallationsResponsePointsMax)
+})
+export const ListInstallationsResponse = zod.array(ListInstallationsResponseItem)
+
+
+/**
+ * @summary Add an installation element to a project
+ */
+export const CreateInstallationParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const createInstallationBodyFloorDefault = 1;
+export const createInstallationBodyFloorMax = 2;
+
+export const createInstallationBodyPointsMax = 100;
+
+
+
+export const CreateInstallationBody = zod.object({
+  "floor": zod.int().min(1).max(createInstallationBodyFloorMax).default(createInstallationBodyFloorDefault),
+  "layer": zod.enum(['electrica', 'agua']),
+  "kind": zod.enum(['toma', 'interruptor', 'lampara', 'tablero', 'cable', 'llave', 'ducha', 'desague', 'tanque', 'tuberia']),
+  "points": zod.array(zod.object({
+  "x": zod.number().describe('X in meters on the floor plan'),
+  "y": zod.number().describe('Y in meters on the floor plan')
+})).min(1).max(createInstallationBodyPointsMax)
+})
+
+export const createInstallationResponsePointsMax = 100;
+
+
+
+export const CreateInstallationResponse = zod.object({
+  "id": zod.int(),
+  "projectId": zod.int(),
+  "floor": zod.int(),
+  "layer": zod.enum(['electrica', 'agua']),
+  "kind": zod.enum(['toma', 'interruptor', 'lampara', 'tablero', 'cable', 'llave', 'ducha', 'desague', 'tanque', 'tuberia']),
+  "points": zod.array(zod.object({
+  "x": zod.number().describe('X in meters on the floor plan'),
+  "y": zod.number().describe('Y in meters on the floor plan')
+})).min(1).max(createInstallationResponsePointsMax)
+})
+
+
+/**
+ * @summary Update an installation element (e.g. move it)
+ */
+export const UpdateInstallationParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const updateInstallationBodyFloorMax = 2;
+
+export const updateInstallationBodyPointsMax = 100;
+
+
+
+export const UpdateInstallationBody = zod.object({
+  "floor": zod.int().min(1).max(updateInstallationBodyFloorMax).optional(),
+  "points": zod.array(zod.object({
+  "x": zod.number().describe('X in meters on the floor plan'),
+  "y": zod.number().describe('Y in meters on the floor plan')
+})).min(1).max(updateInstallationBodyPointsMax).optional()
+})
+
+export const updateInstallationResponsePointsMax = 100;
+
+
+
+export const UpdateInstallationResponse = zod.object({
+  "id": zod.int(),
+  "projectId": zod.int(),
+  "floor": zod.int(),
+  "layer": zod.enum(['electrica', 'agua']),
+  "kind": zod.enum(['toma', 'interruptor', 'lampara', 'tablero', 'cable', 'llave', 'ducha', 'desague', 'tanque', 'tuberia']),
+  "points": zod.array(zod.object({
+  "x": zod.number().describe('X in meters on the floor plan'),
+  "y": zod.number().describe('Y in meters on the floor plan')
+})).min(1).max(updateInstallationResponsePointsMax)
+})
+
+
+/**
+ * @summary Delete an installation element
+ */
+export const DeleteInstallationParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteInstallationResponse = zod.void()
+
+
+/**
  * @summary Update a room
  */
 export const UpdateRoomParams = zod.object({

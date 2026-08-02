@@ -395,6 +395,102 @@ export interface RoomUpdate {
   posY?: number | null;
 }
 
+export interface InstallationPoint {
+  /** X in meters on the floor plan */
+  x: number;
+  /** Y in meters on the floor plan */
+  y: number;
+}
+
+export type InstallationLayer = typeof InstallationLayer[keyof typeof InstallationLayer];
+
+
+export const InstallationLayer = {
+  electrica: 'electrica',
+  agua: 'agua',
+} as const;
+
+export type InstallationKind = typeof InstallationKind[keyof typeof InstallationKind];
+
+
+export const InstallationKind = {
+  toma: 'toma',
+  interruptor: 'interruptor',
+  lampara: 'lampara',
+  tablero: 'tablero',
+  cable: 'cable',
+  llave: 'llave',
+  ducha: 'ducha',
+  desague: 'desague',
+  tanque: 'tanque',
+  tuberia: 'tuberia',
+} as const;
+
+export interface Installation {
+  id: number;
+  projectId: number;
+  floor: number;
+  layer: InstallationLayer;
+  kind: InstallationKind;
+  /**
+     * @minItems 1
+     * @maxItems 100
+     */
+  points: InstallationPoint[];
+}
+
+export type InstallationInputLayer = typeof InstallationInputLayer[keyof typeof InstallationInputLayer];
+
+
+export const InstallationInputLayer = {
+  electrica: 'electrica',
+  agua: 'agua',
+} as const;
+
+export type InstallationInputKind = typeof InstallationInputKind[keyof typeof InstallationInputKind];
+
+
+export const InstallationInputKind = {
+  toma: 'toma',
+  interruptor: 'interruptor',
+  lampara: 'lampara',
+  tablero: 'tablero',
+  cable: 'cable',
+  llave: 'llave',
+  ducha: 'ducha',
+  desague: 'desague',
+  tanque: 'tanque',
+  tuberia: 'tuberia',
+} as const;
+
+export interface InstallationInput {
+  /**
+     * @minimum 1
+     * @maximum 2
+     */
+  floor?: number;
+  layer: InstallationInputLayer;
+  kind: InstallationInputKind;
+  /**
+     * @minItems 1
+     * @maxItems 100
+     */
+  points: InstallationPoint[];
+}
+
+export interface InstallationUpdate {
+  /**
+     * @minimum 1
+     * @maximum 2
+     */
+  floor?: number;
+  /**
+     * @minItems 1
+     * @maxItems 100
+     */
+  points?: InstallationPoint[];
+}
+
 export type MaterialCategory = typeof MaterialCategory[keyof typeof MaterialCategory];
 
 

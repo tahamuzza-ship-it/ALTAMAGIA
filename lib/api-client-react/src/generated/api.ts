@@ -24,6 +24,9 @@ import type {
   ErrorMessage,
   Estimate,
   HealthStatus,
+  Installation,
+  InstallationInput,
+  InstallationUpdate,
   Material,
   MaterialInput,
   MaterialUpdate,
@@ -655,6 +658,298 @@ export const useCreateRoom = <TError = ErrorType<ErrorMessage>,
         TContext
       > => {
       return useMutation(getCreateRoomMutationOptions(options));
+    }
+
+export const getListInstallationsUrl = (id: number,) => {
+
+
+
+
+  return `/api/projects/${id}/installations`
+}
+
+/**
+ * @summary List installation elements of a project
+ */
+export const listInstallations = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<Installation[]> => {
+
+  return customFetch<Installation[]>(getListInstallationsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListInstallationsQueryKey = (id: number,) => {
+    return [
+    `/api/projects/${id}/installations`
+    ] as const;
+    }
+
+
+export const getListInstallationsQueryOptions = <TData = Awaited<ReturnType<typeof listInstallations>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listInstallations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListInstallationsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listInstallations>>> = ({ signal }) => listInstallations(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listInstallations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListInstallationsQueryResult = NonNullable<Awaited<ReturnType<typeof listInstallations>>>
+export type ListInstallationsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List installation elements of a project
+ */
+
+export function useListInstallations<TData = Awaited<ReturnType<typeof listInstallations>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listInstallations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListInstallationsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateInstallationUrl = (id: number,) => {
+
+
+
+
+  return `/api/projects/${id}/installations`
+}
+
+/**
+ * @summary Add an installation element to a project
+ */
+export const createInstallation = async (id: number,
+    installationInput: InstallationInput, options?: Parameters<typeof customFetch>[1]): Promise<Installation> => {
+
+  return customFetch<Installation>(getCreateInstallationUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(installationInput)
+  }
+);}
+
+
+
+
+
+export const getCreateInstallationMutationOptions = <TError = ErrorType<ErrorMessage>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInstallation>>, TError,{id: number;data: BodyType<InstallationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createInstallation>>, TError,{id: number;data: BodyType<InstallationInput>}, TContext> => {
+
+const mutationKey = ['createInstallation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createInstallation>>, {id: number;data: BodyType<InstallationInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createInstallation(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateInstallationMutationResult = NonNullable<Awaited<ReturnType<typeof createInstallation>>>
+    export type CreateInstallationMutationBody = BodyType<InstallationInput>
+    export type CreateInstallationMutationError = ErrorType<ErrorMessage>
+
+    /**
+ * @summary Add an installation element to a project
+ */
+export const useCreateInstallation = <TError = ErrorType<ErrorMessage>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInstallation>>, TError,{id: number;data: BodyType<InstallationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createInstallation>>,
+        TError,
+        {id: number;data: BodyType<InstallationInput>},
+        TContext
+      > => {
+      return useMutation(getCreateInstallationMutationOptions(options));
+    }
+
+export const getUpdateInstallationUrl = (id: number,) => {
+
+
+
+
+  return `/api/installations/${id}`
+}
+
+/**
+ * @summary Update an installation element (e.g. move it)
+ */
+export const updateInstallation = async (id: number,
+    installationUpdate: InstallationUpdate, options?: Parameters<typeof customFetch>[1]): Promise<Installation> => {
+
+  return customFetch<Installation>(getUpdateInstallationUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(installationUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateInstallationMutationOptions = <TError = ErrorType<ErrorMessage>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateInstallation>>, TError,{id: number;data: BodyType<InstallationUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateInstallation>>, TError,{id: number;data: BodyType<InstallationUpdate>}, TContext> => {
+
+const mutationKey = ['updateInstallation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateInstallation>>, {id: number;data: BodyType<InstallationUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateInstallation(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateInstallationMutationResult = NonNullable<Awaited<ReturnType<typeof updateInstallation>>>
+    export type UpdateInstallationMutationBody = BodyType<InstallationUpdate>
+    export type UpdateInstallationMutationError = ErrorType<ErrorMessage>
+
+    /**
+ * @summary Update an installation element (e.g. move it)
+ */
+export const useUpdateInstallation = <TError = ErrorType<ErrorMessage>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateInstallation>>, TError,{id: number;data: BodyType<InstallationUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateInstallation>>,
+        TError,
+        {id: number;data: BodyType<InstallationUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateInstallationMutationOptions(options));
+    }
+
+export const getDeleteInstallationUrl = (id: number,) => {
+
+
+
+
+  return `/api/installations/${id}`
+}
+
+/**
+ * @summary Delete an installation element
+ */
+export const deleteInstallation = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteInstallationUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteInstallationMutationOptions = <TError = ErrorType<ErrorMessage>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteInstallation>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteInstallation>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteInstallation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteInstallation>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteInstallation(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteInstallationMutationResult = NonNullable<Awaited<ReturnType<typeof deleteInstallation>>>
+
+    export type DeleteInstallationMutationError = ErrorType<ErrorMessage>
+
+    /**
+ * @summary Delete an installation element
+ */
+export const useDeleteInstallation = <TError = ErrorType<ErrorMessage>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteInstallation>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteInstallation>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteInstallationMutationOptions(options));
     }
 
 export const getUpdateRoomUrl = (id: number,) => {

@@ -14,6 +14,8 @@ tags:
     description: Bioconstruction house projects
   - name: rooms
     description: Rooms (espacios) of a project
+  - name: installations
+    description: Electrical and water installation elements drawn on the floor plan
   - name: materials
     description: Material price catalog
   - name: estimate
@@ -162,6 +164,88 @@ paths:
                 $ref: "#/components/schemas/Room"
         "404":
           description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+  /projects/{id}/installations:
+    get:
+      operationId: listInstallations
+      tags: [installations]
+      summary: List installation elements of a project
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Installation elements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Installation"
+    post:
+      operationId: createInstallation
+      tags: [installations]
+      summary: Add an installation element to a project
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstallationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Installation"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+  /installations/{id}:
+    patch:
+      operationId: updateInstallation
+      tags: [installations]
+      summary: Update an installation element (e.g. move it)
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstallationUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Installation"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+    delete:
+      operationId: deleteInstallation
+      tags: [installations]
+      summary: Delete an installation element
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
           content:
             application/json:
               schema:
@@ -476,6 +560,58 @@ components:
         heightM: { type: number, exclusiveMinimum: 0 }
         posX: { type: ["number", "null"] }
         posY: { type: ["number", "null"] }
+    InstallationPoint:
+      type: object
+      required: [x, y]
+      properties:
+        x: { type: number, description: X in meters on the floor plan }
+        y: { type: number, description: Y in meters on the floor plan }
+    Installation:
+      type: object
+      required: [id, projectId, floor, layer, kind, points]
+      properties:
+        id: { type: integer }
+        projectId: { type: integer }
+        floor: { type: integer }
+        layer:
+          type: string
+          enum: [electrica, agua]
+        kind:
+          type: string
+          enum: [toma, interruptor, lampara, tablero, cable, llave, ducha, desague, tanque, tuberia]
+        points:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/InstallationPoint"
+    InstallationInput:
+      type: object
+      required: [layer, kind, points]
+      properties:
+        floor: { type: integer, minimum: 1, maximum: 2, default: 1 }
+        layer:
+          type: string
+          enum: [electrica, agua]
+        kind:
+          type: string
+          enum: [toma, interruptor, lampara, tablero, cable, llave, ducha, desague, tanque, tuberia]
+        points:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/InstallationPoint"
+    InstallationUpdate:
+      type: object
+      properties:
+        floor: { type: integer, minimum: 1, maximum: 2 }
+        points:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/InstallationPoint"
     Material:
       type: object
       required: [id, name, unit, unitPrice, category]

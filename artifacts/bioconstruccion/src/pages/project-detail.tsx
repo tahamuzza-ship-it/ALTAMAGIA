@@ -4,7 +4,9 @@ import {
   useGetProject, useUpdateProject, useDeleteProject, 
   useListRooms, useCreateRoom, useUpdateRoom, useDeleteRoom, 
   useGetProjectEstimate, getGetProjectQueryKey, getListRoomsQueryKey, getGetProjectEstimateQueryKey, getListProjectsQueryKey,
-  useListMaterials
+  useListMaterials,
+  useListInstallations, useCreateInstallation, useDeleteInstallation, getListInstallationsQueryKey,
+  type Installation
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
@@ -51,15 +53,118 @@ const terrainSchema = z.object({
   targetMonths: z.coerce.number().nullable().optional(),
 });
 
-function PlanViewer({ rooms, selectedFloor, onRoomClick, onRoomDrop }: { rooms: Room[], selectedFloor: number, onRoomClick: (r: Room) => void, onRoomDrop: (r: Room, posX: number, posY: number) => void }) {
+// ---- Instalaciones (capas eléctrica y agua sobre el plano) ----
+type InstallTool = { layer: "electrica" | "agua"; kind: Installation["kind"] } | null;
+
+const INSTALL_STYLES: Record<string, { color: string; label: string; short: string; run?: boolean }> = {
+  toma:        { color: "#d97706", label: "Toma corriente", short: "T" },
+  interruptor: { color: "#d97706", label: "Interruptor", short: "I" },
+  lampara:     { color: "#f59e0b", label: "Lámpara", short: "L" },
+  tablero:     { color: "#b45309", label: "Tablero eléctrico", short: "TB" },
+  cable:       { color: "#d97706", label: "Cable (recorrido)", short: "~", run: true },
+  llave:       { color: "#2563eb", label: "Llave de agua", short: "LL" },
+  ducha:       { color: "#2563eb", label: "Ducha", short: "D" },
+  desague:     { color: "#64748b", label: "Desagüe", short: "DS" },
+  tanque:      { color: "#0891b2", label: "Tanque", short: "TQ" },
+  tuberia:     { color: "#2563eb", label: "Tubería (recorrido)", short: "≈", run: true },
+};
+
+const ELECTRICA_KINDS = ["toma", "interruptor", "lampara", "tablero", "cable"] as const;
+const AGUA_KINDS = ["llave", "ducha", "desague", "tanque", "tuberia"] as const;
+
+function InstallationsOverlay({ installations, visibleLayers, draftPoints, draftTool, onElementClick }: {
+  installations: Installation[];
+  visibleLayers: { electrica: boolean; agua: boolean };
+  draftPoints: { x: number; y: number }[];
+  draftTool: InstallTool;
+  onElementClick: (inst: Installation) => void;
+}) {
+  const visible = installations.filter(i => visibleLayers[i.layer]);
+  return (
+    <g>
+      {visible.map(inst => {
+        const st = INSTALL_STYLES[inst.kind] ?? { color: "#888", short: "?" };
+        if (st.run && inst.points.length >= 2) {
+          return (
+            <g key={inst.id} className="cursor-pointer" onPointerDown={(e) => { e.stopPropagation(); }} onClick={(e) => { e.stopPropagation(); onElementClick(inst); }}>
+              <polyline
+                points={inst.points.map(p => `${p.x},${p.y}`).join(" ")}
+                fill="none" stroke={st.color} strokeWidth={0.12}
+                strokeDasharray={inst.layer === "agua" ? "0.3 0.15" : undefined}
+                strokeLinecap="round" strokeLinejoin="round" opacity={0.85}
+              />
+              {inst.points.map((p, i) => (
+                <circle key={i} cx={p.x} cy={p.y} r={0.12} fill={st.color} />
+              ))}
+            </g>
+          );
+        }
+        const p = inst.points[0];
+        if (!p) return null;
+        return (
+          <g key={inst.id} className="cursor-pointer" onPointerDown={(e) => { e.stopPropagation(); }} onClick={(e) => { e.stopPropagation(); onElementClick(inst); }}>
+            <circle cx={p.x} cy={p.y} r={0.35} fill="white" stroke={st.color} strokeWidth={0.08} />
+            <text x={p.x} y={p.y + 0.02} textAnchor="middle" dominantBaseline="middle"
+              style={{ fontSize: "0.3px", fill: st.color, fontWeight: 700 }} className="select-none pointer-events-none">
+              {st.short}
+            </text>
+          </g>
+        );
+      })}
+      {draftTool && draftPoints.length > 0 && (
+        <g className="pointer-events-none">
+          <polyline
+            points={draftPoints.map(p => `${p.x},${p.y}`).join(" ")}
+            fill="none" stroke={INSTALL_STYLES[draftTool.kind]?.color ?? "#888"}
+            strokeWidth={0.12} strokeDasharray="0.2 0.2" opacity={0.7}
+          />
+          {draftPoints.map((p, i) => (
+            <circle key={i} cx={p.x} cy={p.y} r={0.15} fill={INSTALL_STYLES[draftTool.kind]?.color ?? "#888"} />
+          ))}
+        </g>
+      )}
+    </g>
+  );
+}
+
+function PlanViewer({ rooms, selectedFloor, onRoomClick, onRoomDrop, installations, visibleLayers, activeTool, draftPoints, onPlanTap, onInstallationClick }: {
+  rooms: Room[], selectedFloor: number, onRoomClick: (r: Room) => void, onRoomDrop: (r: Room, posX: number, posY: number) => void,
+  installations: Installation[],
+  visibleLayers: { electrica: boolean; agua: boolean },
+  activeTool: InstallTool,
+  draftPoints: { x: number; y: number }[],
+  onPlanTap: (x: number, y: number) => void,
+  onInstallationClick: (inst: Installation) => void,
+}) {
   const padding = 2;
   const svgRef = useRef<SVGSVGElement>(null);
   
   const [dragState, setDragState] = useState<{ roomId: number; offsetX: number; offsetY: number; x: number; y: number; moved: boolean } | null>(null);
 
   const floorRooms = rooms.filter(r => r.floor === selectedFloor);
+  const floorInstallations = installations.filter(i => i.floor === selectedFloor);
+
+  const svgPointFromEvent = (clientX: number, clientY: number) => {
+    const svg = svgRef.current;
+    if (!svg) return null;
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return null;
+    const p = pt.matrixTransform(ctm.inverse());
+    // Snap a 0.25m para símbolos y recorridos
+    return { x: Math.round(p.x * 4) / 4, y: Math.round(p.y * 4) / 4 };
+  };
+
+  const handleSvgClick = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!activeTool) return;
+    const p = svgPointFromEvent(e.clientX, e.clientY);
+    if (p) onPlanTap(p.x, p.y);
+  };
 
   const handlePointerDown = (e: React.PointerEvent<SVGGElement>, room: Room, displayedX: number, displayedY: number) => {
+    if (activeTool) return; // en modo instalación, los toques colocan símbolos
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
     
@@ -161,8 +266,9 @@ function PlanViewer({ rooms, selectedFloor, onRoomClick, onRoomDrop }: { rooms: 
       <svg 
         ref={svgRef}
         viewBox={`${bounds.minX} ${bounds.minY} ${bounds.width} ${bounds.height}`}
-        className="w-full h-full max-h-[70vh] drop-shadow-sm touch-none"
+        className={`w-full h-full max-h-[70vh] drop-shadow-sm touch-none ${activeTool ? "cursor-crosshair" : ""}`}
         preserveAspectRatio="xMidYMid meet"
+        onClick={handleSvgClick}
       >
         {floorRooms.map((r, i) => {
           const isDragging = dragState?.roomId === r.id;
@@ -172,7 +278,7 @@ function PlanViewer({ rooms, selectedFloor, onRoomClick, onRoomDrop }: { rooms: 
             <g 
               key={r.id} 
               transform={`translate(${x}, ${y})`} 
-              className={`cursor-grab active:cursor-grabbing transition-all ${isDragging ? 'opacity-80' : ''}`}
+              className={`transition-all ${activeTool ? 'pointer-events-none' : 'cursor-grab active:cursor-grabbing'} ${isDragging ? 'opacity-80' : ''}`}
               onPointerDown={(e) => handlePointerDown(e, r, x, y)}
               onPointerMove={handlePointerMove}
               onPointerUp={(e) => handlePointerUp(e, r)}
@@ -211,10 +317,17 @@ function PlanViewer({ rooms, selectedFloor, onRoomClick, onRoomDrop }: { rooms: 
             </g>
           );
         })}
+        <InstallationsOverlay
+          installations={floorInstallations}
+          visibleLayers={visibleLayers}
+          draftPoints={draftPoints}
+          draftTool={activeTool}
+          onElementClick={onInstallationClick}
+        />
       </svg>
       <div className="absolute bottom-4 right-4 bg-background/80 backdrop-blur border text-xs px-3 py-1.5 rounded-md text-muted-foreground flex items-center gap-2">
         <Maximize className="w-3 h-3" />
-        Arrastra para mover
+        {activeTool ? "Toca el plano para colocar" : "Arrastra para mover"}
       </div>
     </div>
   );
@@ -476,6 +589,54 @@ export default function ProjectDetail() {
   const [terrainDialogOpen, setTerrainDialogOpen] = useState(false);
   const [selectedFloor, setSelectedFloor] = useState<number>(1);
   const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
+
+  // Instalaciones eléctricas y de agua sobre el plano
+  const { data: installations } = useListInstallations(projectId);
+  const createInstallation = useCreateInstallation();
+  const deleteInstallation = useDeleteInstallation();
+  const [visibleLayers, setVisibleLayers] = useState<{ electrica: boolean; agua: boolean }>({ electrica: true, agua: true });
+  const [activeTool, setActiveTool] = useState<InstallTool>(null);
+  const [draftPoints, setDraftPoints] = useState<{ x: number; y: number }[]>([]);
+
+  const invalidateInstallations = () =>
+    queryClient.invalidateQueries({ queryKey: getListInstallationsQueryKey(projectId) });
+
+  const handlePlanTap = (x: number, y: number) => {
+    if (!activeTool) return;
+    const isRun = INSTALL_STYLES[activeTool.kind]?.run;
+    if (isRun) {
+      setDraftPoints(prev => [...prev, { x, y }]);
+      return;
+    }
+    createInstallation.mutate(
+      { id: projectId, data: { floor: selectedFloor, layer: activeTool.layer, kind: activeTool.kind, points: [{ x, y }] } },
+      { onSuccess: invalidateInstallations },
+    );
+  };
+
+  const handleFinishRun = () => {
+    if (!activeTool || draftPoints.length < 2) {
+      setDraftPoints([]);
+      return;
+    }
+    createInstallation.mutate(
+      { id: projectId, data: { floor: selectedFloor, layer: activeTool.layer, kind: activeTool.kind, points: draftPoints } },
+      { onSuccess: () => { invalidateInstallations(); setDraftPoints([]); } },
+    );
+  };
+
+  const handleInstallationClick = (inst: Installation) => {
+    const label = INSTALL_STYLES[inst.kind]?.label ?? inst.kind;
+    if (window.confirm(`¿Borrar "${label}" del plano?`)) {
+      deleteInstallation.mutate({ id: inst.id }, { onSuccess: invalidateInstallations });
+    }
+  };
+
+  const selectTool = (layer: "electrica" | "agua", kind: Installation["kind"]) => {
+    setDraftPoints([]);
+    setActiveTool(prev => (prev && prev.layer === layer && prev.kind === kind ? null : { layer, kind }));
+    setVisibleLayers(prev => ({ ...prev, [layer]: true }));
+  };
 
   const roomForm = useForm<z.infer<typeof roomSchema>>({
     resolver: zodResolver(roomSchema),
@@ -911,9 +1072,81 @@ export default function ProjectDetail() {
                       <PlanViewer3DScene rooms={rooms || []} wallSystem={project.wallSystem} roofType={project.roofType} />
                     </Suspense>
                   ) : (
-                    <PlanViewer rooms={rooms || []} selectedFloor={selectedFloor} onRoomClick={handleOpenEditRoom} onRoomDrop={onRoomDrop} />
+                    <PlanViewer
+                      rooms={rooms || []}
+                      selectedFloor={selectedFloor}
+                      onRoomClick={handleOpenEditRoom}
+                      onRoomDrop={onRoomDrop}
+                      installations={installations || []}
+                      visibleLayers={visibleLayers}
+                      activeTool={activeTool}
+                      draftPoints={draftPoints}
+                      onPlanTap={handlePlanTap}
+                      onInstallationClick={handleInstallationClick}
+                    />
                   )}
                 </CardContent>
+                {viewMode === "2d" && (
+                  <div className="border-t bg-muted/20 p-3 space-y-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Instalaciones:</span>
+                      <Button
+                        variant={visibleLayers.electrica ? "secondary" : "ghost"} size="sm" className="h-7 text-xs px-3"
+                        onClick={() => setVisibleLayers(p => ({ ...p, electrica: !p.electrica }))}
+                      >
+                        ⚡ Eléctrica {visibleLayers.electrica ? "" : "(oculta)"}
+                      </Button>
+                      <Button
+                        variant={visibleLayers.agua ? "secondary" : "ghost"} size="sm" className="h-7 text-xs px-3"
+                        onClick={() => setVisibleLayers(p => ({ ...p, agua: !p.agua }))}
+                      >
+                        💧 Agua {visibleLayers.agua ? "" : "(oculta)"}
+                      </Button>
+                      {activeTool && (
+                        <Badge variant="outline" className="text-xs">
+                          Colocando: {INSTALL_STYLES[activeTool.kind]?.label}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {ELECTRICA_KINDS.map(k => (
+                        <Button key={k}
+                          variant={activeTool?.kind === k ? "default" : "outline"} size="sm"
+                          className="h-7 text-xs px-2"
+                          onClick={() => selectTool("electrica", k)}
+                        >
+                          {INSTALL_STYLES[k].short} {INSTALL_STYLES[k].label.split(" ")[0]}
+                        </Button>
+                      ))}
+                      <span className="mx-1 text-muted-foreground">|</span>
+                      {AGUA_KINDS.map(k => (
+                        <Button key={k}
+                          variant={activeTool?.kind === k ? "default" : "outline"} size="sm"
+                          className="h-7 text-xs px-2"
+                          onClick={() => selectTool("agua", k)}
+                        >
+                          {INSTALL_STYLES[k].short} {INSTALL_STYLES[k].label.split(" ")[0]}
+                        </Button>
+                      ))}
+                    </div>
+                    {activeTool && INSTALL_STYLES[activeTool.kind]?.run && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Toca el plano punto por punto ({draftPoints.length} puntos)</span>
+                        <Button size="sm" className="h-7 text-xs" disabled={draftPoints.length < 2} onClick={handleFinishRun}>
+                          Guardar recorrido
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setDraftPoints([]); setActiveTool(null); }}>
+                          Cancelar
+                        </Button>
+                      </div>
+                    )}
+                    {activeTool && !INSTALL_STYLES[activeTool.kind]?.run && (
+                      <p className="text-xs text-muted-foreground">
+                        Toca el plano para colocar. Vuelve a pulsar el botón para salir. Toca un símbolo ya puesto para borrarlo.
+                      </p>
+                    )}
+                  </div>
+                )}
               </Card>
             </div>
             
