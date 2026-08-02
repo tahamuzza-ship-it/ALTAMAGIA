@@ -1,3 +1,4 @@
+import path from "node:path";
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
@@ -30,5 +31,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+
+// Optional static frontend serving (used on Railway, where the API and the
+// built web app run as a single service). Set SERVE_STATIC_DIR to the
+// frontend build output directory to enable it.
+const staticDir = process.env["SERVE_STATIC_DIR"];
+if (staticDir) {
+  const resolvedDir = path.resolve(staticDir);
+  app.use(express.static(resolvedDir));
+  // SPA fallback: any non-API GET request serves index.html
+  app.get(/^\/(?!api\/).*/, (_req, res) => {
+    res.sendFile(path.join(resolvedDir, "index.html"));
+  });
+}
 
 export default app;
