@@ -7,6 +7,10 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
+// Detrás del proxy de Replit/Railway: req.ip refleja la IP real del cliente
+// (necesario para que el rate-limit de Plan B no sea falsificable).
+app.set("trust proxy", 1);
+
 app.use(
   pinoHttp({
     logger,

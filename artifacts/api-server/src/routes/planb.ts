@@ -33,14 +33,17 @@ const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 // Secret token del webhook: derivado de forma determinística para que ambos
 // servidores lo calculen igual sin compartir otro secreto.
-const WEBHOOK_SECRET = crypto
-  .createHmac("sha256", BOT_TOKEN || "planb")
-  .update("planb-webhook-" + APP_NAME)
-  .digest("hex")
-  .slice(0, 48);
+// Vacío si no hay token: el webhook falla cerrado (403 siempre).
+const WEBHOOK_SECRET = BOT_TOKEN
+  ? crypto
+      .createHmac("sha256", BOT_TOKEN)
+      .update("planb-webhook-" + APP_NAME)
+      .digest("hex")
+      .slice(0, 48)
+  : "";
 
 // ---------- Estado en memoria ----------
-type Otp = { code: string; expiresAt: number };
+type Otp = { code: string; expiresAt: number; attempts: number };
 const otps = new Map<string, Otp>(); // otpToken -> otp
 const sessions = new Map<string, number>(); // sessionToken -> expiresAt
 const phraseAttempts = new Map<string, { count: number; resetAt: number }>();
@@ -51,7 +54,9 @@ const ATTEMPT_WINDOW_MS = 10 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
 
 function clientIp(req: Request): string {
-  return (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.ip || "unknown";
+  // req.ip respeta "trust proxy" configurado en app.ts; no se confía en
+  // cabeceras arbitrarias del cliente.
+  return req.ip || "unknown";
 }
 
 function rateLimited(ip: string): boolean {
@@ -125,7 +130,7 @@ router.post("/planb/login", (req, res) => {
   }
   const code = String(crypto.randomInt(100000, 999999));
   const otpToken = newToken();
-  otps.set(otpToken, { code, expiresAt: Date.now() + OTP_TTL_MS });
+  otps.set(otpToken, { code, expiresAt: Date.now() + OTP_TTL_MS, attempts: 0 });
   void notify(`🔐 ${APP_NAME} Plan B: tu código de acceso es ${code} (vale 5 minutos). Servidor: ${SERVER_NAME}`);
   res.json({ otpToken, message: "Código enviado por Telegram" });
 });
@@ -134,7 +139,18 @@ router.post("/planb/otp", (req, res) => {
   const otpToken = String(req.body?.otpToken ?? "");
   const code = String(req.body?.code ?? "");
   const otp = otps.get(otpToken);
-  if (!otp || Date.now() > otp.expiresAt || otp.code !== code) {
+  if (!otp || Date.now() > otp.expiresAt) {
+    otps.delete(otpToken);
+    res.status(401).json({ error: "Código inválido o vencido" });
+    return;
+  }
+  otp.attempts += 1;
+  if (otp.attempts > 5) {
+    otps.delete(otpToken);
+    res.status(429).json({ error: "Demasiados intentos con este código. Vuelve a empezar." });
+    return;
+  }
+  if (otp.code !== code) {
     res.status(401).json({ error: "Código inválido o vencido" });
     return;
   }
@@ -206,7 +222,7 @@ router.get("/planb/vault", (req, res) => {
 // Webhook de Telegram
 router.post("/planb/telegram-webhook", async (req, res) => {
   const secret = req.headers["x-telegram-bot-api-secret-token"];
-  if (secret !== WEBHOOK_SECRET) {
+  if (!BOT_TOKEN || !WEBHOOK_SECRET || secret !== WEBHOOK_SECRET) {
     res.status(403).end();
     return;
   }
