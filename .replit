@@ -26,3 +26,4 @@ channel = "stable-25_05"
 
 [userenv.shared]
 PLANB_RAILWAY_URL = "https://workspaceapi-server-production-01d8.up.railway.app"
+PLANB_REPLIT_URL = "https://hello-hola.replit.app"
