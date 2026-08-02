@@ -11,7 +11,6 @@
     "railway:start": "pnpm --filter @workspace/db run push-force && NODE_ENV=production SERVE_STATIC_DIR=artifacts/bioconstruccion/dist/public pnpm --filter @workspace/api-server run start"
   },
   "private": true,
-  "packageManager": "pnpm@10.26.1",
   "dependencies": {
     "@replit/connectors-sdk": "^0.4.1"
   },

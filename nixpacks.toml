@@ -1,11 +1,13 @@
 # Railway (Nixpacks) build configuration
+[variables]
+COREPACK_INTEGRITY_KEYS = "0"
+
 [phases.setup]
 nixPkgs = ["nodejs_22"]
 
 [phases.install]
 cmds = [
-  "corepack enable",
-  "corepack prepare pnpm@10.26.1 --activate",
+  "npm install -g pnpm@10.26.1",
   "pnpm install --no-frozen-lockfile",
 ]
 
