@@ -1,0 +1,61 @@
+Voy a revisar qué pasó:
+
+Searched build logs
+
+Hide result
+09:58:07
+[internal] load metadata for ghcr.io/railwayapp/nixpacks:ubuntu-1745885067
+09:58:07
+[internal] load .dockerignore
+09:58:07
+[internal] load .dockerignore
+09:58:07
+[internal] load .dockerignore
+09:58:07
+[internal] load .dockerignore
+09:58:07
+UndefinedVar: Usage of undefined variable '$NIXPACKS_PATH' (line 18)(https://docs.docker.com/go/dockerfile/rule/undefined-var/) details: Variables should be defined before their use
+09:58:07
+[stage-0 10/10] COPY . /app
+09:58:07
+[stage-0 9/10] RUN printf '\nPATH=/app/node_modules/.bin:$PATH' >> /root/.profile
+09:58:07
+[stage-0 8/10] RUN --mount=type=cache,id=s/4102873c-2794-42c9-ada1-792fe0e56f82-node_modules/cache,target=/app/node_modules/.cache npm install -g pnpm@10.26.1 && pnpm install --no-frozen-lockfile && pnpm run railway:build
+09:58:07
+[stage-0 7/10] COPY . /app/.
+...and 22 more logs
+Checked environment status
+
+Hide result
+1 of 2 services with issues
+•
+4 recent failures
+@workspace/api-server
+4
+Offline
+❌ PROBLEMA IDENTIFICADO
+ERR_PNPM_LOCKFILE_CONFIG_MISMATCH  
+Cannot proceed with the frozen installation. The current "overrides" 
+configuration doesn't match the value found in the lockfile
+
+El error vuelve porque Nixpacks está usando pnpm i --frozen-lockfile de forma automática (línea 6/10).
+
+Tu railway.json con npm install -g pnpm && pnpm install --no-frozen-lockfile se ignora completamente. Nixpacks auto-detecta el workspace y ejecuta su propio comando.
+
+✅ SOLUCIÓN DEFINITIVA - SIN OTRA OPCIÓN
+Debes eliminar o renombrar pnpm-lock.yaml en tu repo Y regenerarlo localmente:
+
+cd tu-repo
+rm pnpm-lock.yaml
+pnpm install
+git add pnpm-lock.yaml
+git commit -m "Regenerate pnpm-lock.yaml with correct overrides"
+git push
+
+O, si no puedes hacerlo localmente ahora:
+
+Edita .gitignore para que ignore pnpm-lock.yaml
+Haz push
+Railway generará uno nuevo en el build
+SIN sincronizar el lockfile, NO va a pasar. Eso es lo único que falta.
+
