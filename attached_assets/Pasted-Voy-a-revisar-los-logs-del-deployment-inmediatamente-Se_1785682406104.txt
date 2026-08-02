@@ -1,0 +1,59 @@
+Voy a revisar los logs del deployment inmediatamente:
+
+Searched build logs
+
+Hide result
+09:50:08
+copying path '/nix/store/wf5zj2gbib3gjqllkabxaw4dh0gzcla3-builder.pl' from 'https://cache.nixos.org'...
+09:50:08
+copying path '/nix/store/17v0ywnr3akp85pvdi56gwl99ljv95kx-gcc-14-20241116-libgcc' from 'https://cache.nixos.org'...
+09:50:08
+copying path '/nix/store/1m67ipsk39xvhyqrxnzv2m2p48pil8kl-gnu-config-2024-01-01' from 'https://cache.nixos.org'...
+09:50:08
+copying path '/nix/store/acfkqzj5qrqs88a4a6ixnybbjxja663d-xgcc-14-20241116-libgcc' from 'https://cache.nixos.org'...
+09:50:08
+copying path '/nix/store/xcqcgqazykf6s7fsn08k0blnh0wisdcl-libunistring-1.3' from 'https://cache.nixos.org'...
+09:50:08
+copying path '/nix/store/d29r1bdmlvwmj52apgcdxfl1mm9c5782-update-autotools-gnu-config-scripts-hook' from 'https://cache.nixos.org'...
+09:50:08
+copying path '/nix/store/34z2792zyd4ayl5186vx0s98ckdaccz9-libidn2-2.3.7' from 'https://cache.nixos.org'...
+09:50:08
+copying path '/nix/store/65h17wjrrlsj2rj540igylrx7fqcd6vq-glibc-2.40-36' from 'https://cache.nixos.org'...
+09:50:09
+copying path '/nix/store/a9jgnlhkjkxav6qrc3rzg2q84pkl2wvr-attr-2.5.2' from 'https://cache.nixos.org'...
+09:50:09
+copying path '/nix/store/ivl2v8rgg7qh1jkj5pwpqycax3rc2hnl-bzip2-1.0.8' from 'https://cache.nixos.org'...
+...and 90 more logs
+Fetched service config
+❌ DEPLOYMENT FALLÓ - NUEVO ERROR
+Error: Fallo durante la preparación de pnpm
+
+Internal Error: Cannot find matching keyid
+...at verifySignature (...corepack.cjs:21535:47)
+
+Causa: Corepack no puede validar la firma digital de pnpm@10.26.1. Esto sucede cuando:
+
+Hay problemas de certificados en el build
+La versión de pnpm especificada tiene conflictos de validación
+🔧 ARREGLO RECOMENDADO
+En tu package.json del workspace, cambia la versión de pnpm a una más estable:
+
+"packageManager": "pnpm@9.12.3"
+
+O elimina corepack del build y usa pnpm directamente. Luego:
+
+pnpm install --no-frozen-lockfile
+git add pnpm-lock.yaml package.json
+git commit -m "Fix: downgrade pnpm and sync lockfile"
+git push
+
+📍 URL DEL SERVICIO
+Tu servicio no tiene dominio público configurado (el campo networking está vacío).
+
+Para obtener la URL pública:
+
+Ve a Settings → Networking en el dashboard
+Añade un dominio público bajo "Public URL"
+Tu URL será algo como: https://your-service-name.railway.app
+Una vez que el deployment sea exitoso, te daré la URL exacta.
+
