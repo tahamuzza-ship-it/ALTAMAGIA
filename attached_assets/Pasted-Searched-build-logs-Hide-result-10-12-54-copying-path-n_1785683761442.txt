@@ -1,0 +1,79 @@
+Searched build logs
+
+Hide result
+10:12:54
+copying path '/nix/store/psjc7gv2314bxncywpvsg76gvbk2dn00-libXau-1.0.12' from 'https://cache.nixos.org'...
+10:12:54
+copying path '/nix/store/p9k7bd23v5yvmap9594f9x7hpvacdh32-expand-response-params' from 'https://cache.nixos.org'...
+10:12:54
+copying path '/nix/store/hx0kbryivbs7qccnvpmr17y6x818dhxc-libXdmcp-1.1.5' from 'https://cache.nixos.org'...
+10:12:54
+copying path '/nix/store/clbb2cvigynr235ab5zgi18dyavznlk2-gnused-4.9' from 'https://cache.nixos.org'... copying path '/nix/store/4v64wga9rk0c919ip673j36g6ikx26ha-keyutils-1.6.3-lib' from 'https://cache.nixos.org'...
+10:12:54
+copying path '/nix/store/zrnqzhcvlpiycqbswl0w172y4bpn0lb4-bzip2-1.0.8' from 'https://cache.nixos.org'...
+10:12:54
+copying path '/nix/store/9mcjnb75xq17mvr8ikm3sg5yhx6ga62r-libuv-1.50.0' from 'https://cache.nixos.org'...
+10:12:54
+copying path '/nix/store/qizipyz9y17nr4w4gmxvwd3x4k0bp2rh-libxcrypt-4.4.38' from 'https://cache.nixos.org'...
+10:12:54
+copying path '/nix/store/vfmnmqsnfiiqmphy7ffh2zqynsxfck1q-ncurses-6.5' from 'https://cache.nixos.org'...
+10:12:54
+copying path '/nix/store/w5jysn25rynd1d4f3z1nzdkm3rv7rmf0-nghttp2-1.65.0-lib' from 'https://cache.nixos.org'...
+10:12:54
+copying path '/nix/store/3mi59bgj22xx29dyss7jhmx3sgznd85m-acl-2.3.2' from 'https://cache.nixos.org'...
+...and 190 more logs
+Checked environment status
+
+Hide result
+1 of 2 services with issues
+•
+7 recent failures
+@workspace/api-server
+1
+Crashed 1 minute ago
+Postgres
+Online
+Fetched service config
+❌ DIAGNÓSTICO: CRASH EN RUNTIME (No en build)
+Build EXITOSO: ✅ Node 22 instalado correctamente ✅ pnpm run railway:build pasó sin errores ✅ Vite compiló tu frontend (bioconstruccion) ✅ API server compiló sin errores ✅ Imagen Docker creada y pusheada
+
+PERO: El contenedor CRASH al arrancar (después del build).
+
+🔍 El problema:
+Tu servicio está en asia-southeast1 pero sin dominio público configurado. Además, el startup está fallando silenciosamente (no veo logs de runtime).
+
+✅ ARREGLO RÁPIDO:
+Staged service update
+
+Update "@workspace/api-server"
+Staged
+
+✅ Dominio público agregado. Ahora redeploy:
+
+Deployed service
+@workspace/api-server
+7a4de103
+Deploying
+✅ Redeploy lanzado: 7a4de103-97cb-4097-a56d-3a3c486d1754
+
+Monitoreando resultado final:
+
+Checked environment status
+
+Hide result
+1 of 2 services with issues
+•
+7 recent failures
+@workspace/api-server
+1
+Deploying
+Postgres
+Online
+🔄 BUILDING (reutilizando imagen anterior, debería ser rápido). Esperando resultado...
+
+Apply 1 change
+
+
+Details
+
+Deploy
