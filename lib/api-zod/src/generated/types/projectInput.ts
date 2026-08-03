@@ -16,6 +16,7 @@ export interface ProjectInput {
   name: string;
   description?: string;
   location?: string;
+  owner?: string;
   wallSystem: ProjectInputWallSystem;
   roofType: ProjectInputRoofType;
   status?: ProjectInputStatus;

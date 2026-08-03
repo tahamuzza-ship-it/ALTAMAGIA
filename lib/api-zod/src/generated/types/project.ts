@@ -18,6 +18,11 @@ export interface Project {
   description?: string | null;
   /** @nullable */
   location?: string | null;
+  /**
+     * Nombre del propietario (para el rótulo del plano)
+     * @nullable
+     */
+  owner?: string | null;
   /** Wall construction system */
   wallSystem: ProjectWallSystem;
   roofType: ProjectRoofType;

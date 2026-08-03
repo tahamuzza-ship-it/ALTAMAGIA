@@ -20,6 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TechnicalPlan } from "@/components/technical-plan";
+import { MeasureWizard, type WizardRoom } from "@/components/measure-wizard";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
@@ -605,7 +607,8 @@ export default function ProjectDetail() {
     setSelectedFloorRaw(floor);
     setDraftPoints([]);
   };
-  const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
+  const [viewMode, setViewMode] = useState<"2d" | "3d" | "tecnico">("2d");
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   // Instalaciones eléctricas y de agua sobre el plano
   const { data: installations } = useListInstallations(projectId);
@@ -1042,6 +1045,29 @@ export default function ProjectDetail() {
         )}
       </div>
 
+      <MeasureWizard
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        floor={selectedFloor}
+        saving={createRoom.isPending}
+        onAddRoom={async (r: WizardRoom) => {
+          // Colocar el espacio nuevo sin encimarlo sobre los existentes:
+          // a la derecha del plano actual, y salto de fila cada 14 m de ancho.
+          const floorRooms = (rooms || []).filter(rm => (rm.floor ?? 1) === selectedFloor);
+          let posX = 0, posY = 0;
+          if (floorRooms.length > 0) {
+            const maxX = Math.max(...floorRooms.map((rm, i) => (rm.posX ?? i * 5) + rm.widthM));
+            if (maxX + r.widthM <= 14) {
+              posX = maxX + 0.5;
+            } else {
+              posY = Math.max(...floorRooms.map((rm) => (rm.posY ?? 0) + rm.lengthM)) + 0.5;
+            }
+          }
+          await createRoom.mutateAsync({ id: projectId, data: { ...r, posX, posY } });
+          queryClient.invalidateQueries({ queryKey: getListRoomsQueryKey(projectId) });
+          queryClient.invalidateQueries({ queryKey: getGetProjectEstimateQueryKey(projectId) });
+        }}
+      />
       <Tabs defaultValue="plano" className="mt-8">
         <TabsList className="grid w-full md:w-auto grid-cols-1 sm:grid-cols-3 h-auto p-1 bg-muted/50">
           <TabsTrigger value="plano" className="py-2.5">Diseño de Planos</TabsTrigger>
@@ -1066,8 +1092,14 @@ export default function ProjectDetail() {
                       <Button variant={viewMode === "3d" ? "secondary" : "ghost"} size="sm" onClick={() => setViewMode("3d")} className="h-7 text-xs px-3">
                         Vista 3D
                       </Button>
+                      <Button variant={viewMode === "tecnico" ? "secondary" : "ghost"} size="sm" onClick={() => setViewMode("tecnico")} className="h-7 text-xs px-3">
+                        Plano técnico
+                      </Button>
                     </div>
-                    {viewMode === "2d" && (
+                    <Button variant="outline" size="sm" className="h-9 text-xs" onClick={() => setWizardOpen(true)}>
+                      📐 Asistente de medidas
+                    </Button>
+                    {viewMode !== "3d" && (
                       <div className="flex bg-background border rounded-lg p-1">
                         <Button variant={selectedFloor === 1 ? "secondary" : "ghost"} size="sm" onClick={() => setSelectedFloor(1)} className="h-7 text-xs px-3">
                           Piso 1
@@ -1088,6 +1120,16 @@ export default function ProjectDetail() {
                     <Suspense fallback={<div className="flex items-center justify-center min-h-[500px]"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
                       <PlanViewer3DScene rooms={rooms || []} wallSystem={project.wallSystem} roofType={project.roofType} installations={installations || []} />
                     </Suspense>
+                  ) : viewMode === "tecnico" ? (
+                    <TechnicalPlan
+                      project={project}
+                      rooms={rooms || []}
+                      floor={selectedFloor}
+                      onSaveOwner={(owner) => updateProject.mutate(
+                        { id: projectId, data: { owner } },
+                        { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(projectId) }) },
+                      )}
+                    />
                   ) : (
                     <PlanViewer
                       rooms={rooms || []}

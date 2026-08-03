@@ -16,6 +16,7 @@ export const projectsTable = pgTable("projects", {
   name: text("name").notNull(),
   description: text("description"),
   location: text("location"),
+  owner: text("owner"),
   wallSystem: text("wall_system").notNull(),
   roofType: text("roof_type").notNull(),
   status: text("status").notNull().default("diseno"),

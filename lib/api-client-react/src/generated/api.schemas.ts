@@ -79,6 +79,11 @@ export interface Project {
   description?: string | null;
   /** @nullable */
   location?: string | null;
+  /**
+     * Nombre del propietario (para el rótulo del plano)
+     * @nullable
+     */
+  owner?: string | null;
   /** Wall construction system */
   wallSystem: ProjectWallSystem;
   roofType: ProjectRoofType;
@@ -179,6 +184,7 @@ export interface ProjectInput {
   name: string;
   description?: string;
   location?: string;
+  owner?: string;
   wallSystem: ProjectInputWallSystem;
   roofType: ProjectInputRoofType;
   status?: ProjectInputStatus;
@@ -260,6 +266,8 @@ export interface ProjectUpdate {
   description?: string | null;
   /** @nullable */
   location?: string | null;
+  /** @nullable */
+  owner?: string | null;
   wallSystem?: ProjectUpdateWallSystem;
   roofType?: ProjectUpdateRoofType;
   status?: ProjectUpdateStatus;

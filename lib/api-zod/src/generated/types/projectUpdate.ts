@@ -18,6 +18,8 @@ export interface ProjectUpdate {
   description?: string | null;
   /** @nullable */
   location?: string | null;
+  /** @nullable */
+  owner?: string | null;
   wallSystem?: ProjectUpdateWallSystem;
   roofType?: ProjectUpdateRoofType;
   status?: ProjectUpdateStatus;
