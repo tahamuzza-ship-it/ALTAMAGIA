@@ -1,0 +1,9 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "tWcF7mXzsLC1fw1Xc-tV-"
+uri = "file://attached_assets/Manual-BioCasa.pdf"
+type = "pdf"
+title = "Manual de Usuario de BioCasa"
+description = "Manual descargable en PDF: cómo crear proyectos, dibujar planos, instalaciones, vista 3D, plano técnico y cotizaciones."
