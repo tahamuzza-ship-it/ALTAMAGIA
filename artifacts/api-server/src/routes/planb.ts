@@ -229,9 +229,13 @@ router.post("/planb/telegram-webhook", async (req, res) => {
   res.json({ ok: true }); // responder rápido a Telegram
   const msg = req.body?.message;
   const chatId = String(msg?.chat?.id ?? "");
+  const chatType = String(msg?.chat?.type ?? "");
   const text = String(msg?.text ?? "").trim().toUpperCase();
-  if (!chatId || chatId !== CHAT_ID) return; // solo chat autorizado
-  if (text === "STATUS" || text === "/STATUS") {
+  // Se aceptan: el chat privado autorizado y los grupos/supergrupos donde
+  // esté el bot (para que Make reciba los mensajes del grupo de noticias).
+  const isGroup = chatType === "group" || chatType === "supergroup";
+  if (!chatId || (chatId !== CHAT_ID && !isGroup)) return;
+  if (chatId === CHAT_ID && (text === "STATUS" || text === "/STATUS")) {
     await notify(`📡 ${APP_NAME} hablando desde: ${SERVER_NAME}`);
     return;
   }
