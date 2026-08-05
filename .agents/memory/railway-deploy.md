@@ -24,3 +24,8 @@ Required combo (each fixed a distinct failure):
 - Emergency cabin at `/api/planb` (api-server route): phrase + Telegram OTP login, moves bot webhook between Railway (primary) and Replit backup (https://hello-hola.replit.app).
 - Telegram bot @Resercher5x_bot is EXCLUSIVE to BioCasa (was detached from a Make.com webhook with user's consent). Webhook secret is HMAC-derived from the bot token — both servers compute it identically; no extra shared secret.
 - Env needed on BOTH servers: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, PLANB_AUTH_PHRASE, PLANB_RAILWAY_URL, PLANB_REPLIT_URL.
+
+## Base de datos compartida (taller ↔ Railway)
+- Secret `RAILWAY_DATABASE_URL` quedó guardado SIN host:puerto (Railway lo copió como `...@:/railway` porque el Public Access no estaba activado al copiar).
+- Fix: env no-secreto `RAILWAY_DB_HOST_PORT` (switchback.proxy.rlwy.net:18588) + `lib/db` (index.ts y drizzle.config.ts) reconstruye la URL reemplazando `@:/` por `@host:port/`. RAILWAY_DATABASE_URL tiene prioridad sobre DATABASE_URL.
+- Consecuencia: los checkpoints de Replit YA NO respaldan los datos; la DB de Railway es la única fuente.
