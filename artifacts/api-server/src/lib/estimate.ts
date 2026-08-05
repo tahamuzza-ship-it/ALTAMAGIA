@@ -187,7 +187,8 @@ export function computeItems(
       break;
     case "adobe": {
       const bloques = wall * ADOBES_POR_M2;
-      const jornadas = Math.ceil(bloques / ADOBES_POR_JORNADA);
+      // Tope acordado: max 10 jornadas (~$1.500.000 a $140.000/dia)
+      const jornadas = Math.min(10, Math.ceil(bloques / ADOBES_POR_JORNADA));
       add(
         "Adobe grande (hecho en obra)",
         "muros",
@@ -222,7 +223,8 @@ export function computeItems(
       // Zocalo de adobe hasta 1.20 m + bahareque arriba (con descuento de
       // 15% en la parte alta por ventanas y vanos).
       const bloques = wallLower * ADOBES_POR_M2;
-      const jornadas = Math.ceil(bloques / ADOBES_POR_JORNADA);
+      // Tope acordado: max 10 jornadas (~$1.500.000 a $140.000/dia)
+      const jornadas = Math.min(10, Math.ceil(bloques / ADOBES_POR_JORNADA));
       const upperNet = wallUpper * 0.85;
       add(
         "Adobe grande (hecho en obra)",
@@ -372,15 +374,16 @@ export function computeItems(
   );
 
   // Mano de obra de construccion (levantar muros, armar techos, revoques,
-  // etc.). No incluye la fabricacion de adobes, que va aparte. Regla acordada:
-  // minimo 5 meses de trabajo de una cuadrilla de 2 personas (~26 dias/mes).
-  const jornadasObra = Math.max(130, Math.ceil(floor * 1.9));
+  // etc.). No incluye la fabricacion de adobes, que va aparte.
+  // Regla acordada: tope de $13.500.000 => 96 jornadas a $140.000/dia.
+  // Sin contar domingos: ~4 meses de cuadrilla de 2 personas (6 dias/semana).
+  const jornadasObra = Math.min(96, Math.max(80, Math.ceil(floor * 1.4)));
   add(
     "Jornada construccion (2 personas)",
     "otros",
     jornadasObra,
     "dia",
-    `Mano de obra de la construccion (levantar paredes, techos, revoques, etc.): minimo 5 meses x 26 dias = 130 jornadas de 2 personas. Para esta casa de ${round(floor, 1)} m2 se estiman ${jornadasObra} jornadas. No incluye la fabricacion de adobes (va aparte).`,
+    `Mano de obra de la construccion (levantar paredes, techos, revoques, etc.): ${jornadasObra} jornadas de 2 personas trabajando de lunes a sabado (sin domingos), tope acordado de 96 jornadas (~$13.500.000 a $140.000/dia).`,
   );
 
   // Merge duplicate material lines (e.g. guadua appears in several sections)
