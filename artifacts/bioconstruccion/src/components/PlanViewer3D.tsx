@@ -435,7 +435,7 @@ function Room3D({ room, maxH1, maxH2 = 0, wallSystem, stairHole }: { room: Room,
           anchorY="middle"
           rotation={[-Math.PI / 2, 0, 0]}
         >
-          {room.name}
+          {`${room.name}\n${room.widthM} × ${room.lengthM} m`}
         </Text>
       </group>
     );
@@ -484,8 +484,9 @@ function Room3D({ room, maxH1, maxH2 = 0, wallSystem, stairHole }: { room: Room,
         anchorX="center"
         anchorY="middle"
         rotation={[-Math.PI / 2, 0, 0]}
+        textAlign="center"
       >
-        {room.name}
+        {`${room.name}\n${room.widthM} × ${room.lengthM} m`}
       </Text>
     </group>
   );
