@@ -9,6 +9,31 @@ import { Vector3, BufferGeometry, BufferAttribute, DoubleSide } from 'three';
 import { Button } from '@/components/ui/button';
 import { Footprints, X, Info } from 'lucide-react';
 
+/**
+ * Barrera de errores para la vista 3D: si el navegador pierde el contexto
+ * WebGL (o los controles fallan al conectarse), reiniciamos solo el canvas
+ * en vez de tumbar toda la aplicación.
+ */
+class Canvas3DBoundary extends React.Component<{ children: React.ReactNode }, { attempt: number; failed: boolean }> {
+  state = { attempt: 0, failed: false };
+  componentDidCatch() {
+    this.setState(s => (s.attempt < 3 ? { attempt: s.attempt + 1, failed: false } : { ...s, failed: true }));
+  }
+  static getDerivedStateFromError() {
+    return null; // decidimos en componentDidCatch si reintentar o rendirnos
+  }
+  render() {
+    if (this.state.failed) {
+      return (
+        <div className="w-full h-full flex items-center justify-center p-6 text-center">
+          <p className="text-sm">La vista 3D tuvo un problema con el navegador.<br />Recarga la página para verla de nuevo.</p>
+        </div>
+      );
+    }
+    return <React.Fragment key={this.state.attempt}>{this.props.children}</React.Fragment>;
+  }
+}
+
 const wallColors: Record<string, string> = {
   bahareque: '#dfc9a4', // revoque de tierra claro
   tapia_pisada: '#b98a5a', // tapia pisada ocre
@@ -1089,6 +1114,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType, install
 
   return (
     <div className="relative w-full h-full min-h-[500px]">
+      <Canvas3DBoundary>
       <Canvas shadows camera={{ position: [center[0] + 15, 15, center[2] + 15], fov: 45 }} className="!absolute inset-0">
         {/* Cielo realista con sol */}
         <Sky distance={4000} sunPosition={[60, 45, 30]} turbidity={6} rayleigh={1.2} />
@@ -1166,6 +1192,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType, install
           <OrbitControls target={[center[0], maxH1 / 2, center[2]]} minDistance={5} maxDistance={50} maxPolarAngle={Math.PI / 2 - 0.05} />
         )}
       </Canvas>
+      </Canvas3DBoundary>
 
       {/* Overlay UI */}
       {!walkMode ? (
