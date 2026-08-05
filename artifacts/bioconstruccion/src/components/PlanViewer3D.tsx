@@ -434,6 +434,8 @@ function Room3D({ room, maxH1, maxH2 = 0, wallSystem, stairHole }: { room: Room,
           anchorX="center"
           anchorY="middle"
           rotation={[-Math.PI / 2, 0, 0]}
+          textAlign="center"
+          lineHeight={1.25}
         >
           {`${room.name}\n${room.widthM} × ${room.lengthM} m`}
         </Text>
@@ -484,12 +486,14 @@ function Room3D({ room, maxH1, maxH2 = 0, wallSystem, stairHole }: { room: Room,
       {/* Label */}
       <Text 
         position={[x, baseZ + h + 0.2, z]}
-        fontSize={0.4}
         color="#1a2e20"
         anchorX="center"
         anchorY="middle"
         rotation={[-Math.PI / 2, 0, 0]}
         textAlign="center"
+        lineHeight={1.25}
+        fontSize={Math.max(0.26, Math.min(0.4, room.lengthM * 0.16, room.widthM * 0.09))}
+        maxWidth={Math.max(1.2, room.widthM - 0.5)}
       >
         {`${room.name}\n${room.widthM} × ${room.lengthM} m`}
       </Text>

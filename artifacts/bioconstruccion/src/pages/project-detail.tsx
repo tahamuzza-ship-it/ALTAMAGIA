@@ -312,24 +312,50 @@ function PlanViewer({ rooms, selectedFloor, onRoomClick, onRoomDrop, installatio
                   className="fill-transparent stroke-muted/30 stroke-[0.05]"
                 />
               )}
-              <text 
-                x={r.widthM / 2} 
-                y={r.lengthM / 2} 
-                textAnchor="middle" 
-                dominantBaseline="middle"
-                className="text-[0.4px] font-sans fill-foreground font-medium pointer-events-none select-none"
-              >
-                {r.name}
-              </text>
-              <text 
-                x={r.widthM / 2} 
-                y={r.lengthM / 2 + 0.6} 
-                textAnchor="middle" 
-                dominantBaseline="middle"
-                className="text-[0.25px] font-sans fill-muted-foreground pointer-events-none select-none"
-              >
-                {r.widthM}m × {r.lengthM}m
-              </text>
+              {(() => {
+                // Letra que quepa dentro del espacio: se achica en espacios angostos
+                // y en corredores va todo en una sola línea para que no se encimen.
+                const fs = Math.max(0.24, Math.min(0.4, r.lengthM * 0.28, (r.widthM * 1.4) / Math.max(6, r.name.length)));
+                const small = r.lengthM < 2 || r.widthM < 2;
+                if (small) {
+                  return (
+                    <text
+                      x={r.widthM / 2}
+                      y={r.lengthM / 2}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize={fs}
+                      className="font-sans fill-foreground font-medium pointer-events-none select-none"
+                    >
+                      {r.name} · {r.widthM}×{r.lengthM}m
+                    </text>
+                  );
+                }
+                return (
+                  <>
+                    <text
+                      x={r.widthM / 2}
+                      y={r.lengthM / 2 - fs * 0.35}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize={fs}
+                      className="font-sans fill-foreground font-medium pointer-events-none select-none"
+                    >
+                      {r.name}
+                    </text>
+                    <text
+                      x={r.widthM / 2}
+                      y={r.lengthM / 2 + fs * 0.95}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize={Math.max(0.2, fs * 0.65)}
+                      className="font-sans fill-muted-foreground pointer-events-none select-none"
+                    >
+                      {r.widthM}m × {r.lengthM}m
+                    </text>
+                  </>
+                );
+              })()}
             </g>
           );
         })}
