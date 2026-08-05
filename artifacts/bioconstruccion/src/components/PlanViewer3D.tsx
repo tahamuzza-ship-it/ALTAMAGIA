@@ -1172,15 +1172,18 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType, install
               <Footprints className="w-4 h-4 mr-1.5" /> Recorrer
             </Button>
           )}
-          <Button size="sm" variant={roofMode === 'cerrado' ? 'default' : 'secondary'} onClick={() => setRoofMode('cerrado')} className="shadow-md">
-            Dos aguas
-          </Button>
-          <Button size="sm" variant={roofMode === 'cruzado' ? 'default' : 'secondary'} onClick={() => setRoofMode('cruzado')} className="shadow-md">
-            Cruzado (X)
-          </Button>
-          <Button size="sm" variant={roofMode === 'abierto' ? 'default' : 'secondary'} onClick={() => setRoofMode('abierto')} className="shadow-md">
-            Sin techo
-          </Button>
+          <div className="flex items-center gap-1 bg-background/90 rounded-lg px-2 py-1 shadow-md">
+            <span className="text-[11px] font-bold text-muted-foreground mr-1">TECHO:</span>
+            <Button size="sm" variant={roofMode === 'cerrado' ? 'default' : 'secondary'} onClick={() => setRoofMode('cerrado')}>
+              Con techo
+            </Button>
+            <Button size="sm" variant={roofMode === 'cruzado' ? 'default' : 'secondary'} onClick={() => setRoofMode('cruzado')}>
+              Cruzado (X)
+            </Button>
+            <Button size="sm" variant={roofMode === 'abierto' ? 'default' : 'secondary'} onClick={() => setRoofMode('abierto')}>
+              Sin techo
+            </Button>
+          </div>
           <Button size="sm" variant="secondary" onClick={() => setShowInfo(v => !v)} className="shadow-md">
             <Info className="w-4 h-4 mr-1.5" /> ¿Por qué así?
           </Button>
