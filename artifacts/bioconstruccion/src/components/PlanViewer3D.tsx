@@ -34,6 +34,26 @@ class Canvas3DBoundary extends React.Component<{ children: React.ReactNode }, { 
   }
 }
 
+/**
+ * OrbitControls seguros: conectan explícitamente al canvas actual.
+ * Evita el error "Cannot read properties of null (reading 'addEventListener')"
+ * cuando los controles se montan antes de que el canvas esté conectado
+ * (típico tras una actualización en caliente o al recuperar el contexto WebGL).
+ */
+function SafeOrbitControls({ target }: { target: [number, number, number] }) {
+  const gl = useThree(s => s.gl);
+  if (!gl?.domElement) return null;
+  return (
+    <OrbitControls
+      domElement={gl.domElement}
+      target={target}
+      minDistance={5}
+      maxDistance={50}
+      maxPolarAngle={Math.PI / 2 - 0.05}
+    />
+  );
+}
+
 const wallColors: Record<string, string> = {
   bahareque: '#dfc9a4', // revoque de tierra claro
   tapia_pisada: '#b98a5a', // tapia pisada ocre
@@ -1189,7 +1209,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType, install
         {walkMode ? (
           <WalkControls boxes={collisionBoxes} start={spawn ?? walkStart} floorY={walkFloorY} floor={walkFloor} touchInput={touchInput} rooms={placedRooms} onRoomChange={setCurrentRoom} />
         ) : (
-          <OrbitControls target={[center[0], maxH1 / 2, center[2]]} minDistance={5} maxDistance={50} maxPolarAngle={Math.PI / 2 - 0.05} />
+          <SafeOrbitControls target={[center[0], maxH1 / 2, center[2]]} />
         )}
       </Canvas>
       </Canvas3DBoundary>
