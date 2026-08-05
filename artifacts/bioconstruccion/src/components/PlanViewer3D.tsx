@@ -230,7 +230,7 @@ function EntradaPrincipal({ x, z }: { x: number, z: number }) {
         <meshStandardMaterial color="#a0522d" roughness={1} />
       </mesh>
       {/* letrero */}
-      <Text position={[0, 3.15, -0.8]} fontSize={0.34} color="#1a2e20" anchorX="center" anchorY="middle" rotation={[0, Math.PI, 0]}>
+      <Text position={[0, 3.15, -0.8]} fontSize={0.34} color="#000000" anchorX="center" anchorY="middle" rotation={[0, Math.PI, 0]}>
         Entrada principal
       </Text>
     </group>
@@ -430,7 +430,7 @@ function Room3D({ room, maxH1, maxH2 = 0, wallSystem, stairHole }: { room: Room,
         <Text
           position={[x, baseZ + 1.6, z]}
           fontSize={0.4}
-          color="#1a2e20"
+          color="#000000"
           anchorX="center"
           anchorY="middle"
           rotation={[-Math.PI / 2, 0, 0]}
@@ -448,7 +448,7 @@ function Room3D({ room, maxH1, maxH2 = 0, wallSystem, stairHole }: { room: Room,
       {/* Floor slab */}
       <mesh position={[x, floorY, z]} receiveShadow>
         <boxGeometry args={[w, 0.1, l]} />
-        <meshStandardMaterial color="#9c8468" roughness={1} />
+        <meshStandardMaterial color="#d8c9ae" roughness={1} />
       </mesh>
 
       {/* Sobrecimiento de piedra (base) — solo piso 1 */}
@@ -486,7 +486,7 @@ function Room3D({ room, maxH1, maxH2 = 0, wallSystem, stairHole }: { room: Room,
       {/* Label */}
       <Text 
         position={[x, baseZ + h + 0.2, z]}
-        color="#1a2e20"
+        color="#000000"
         anchorX="center"
         anchorY="middle"
         rotation={[-Math.PI / 2, 0, 0]}
@@ -1124,7 +1124,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType, install
             <>
               <EntradaPrincipal x={entrada.x} z={entrada.z} />
               {/* Letrero de la parte trasera */}
-              <Text position={[entrada.backX, 2.4, entrada.backZ + 0.4]} fontSize={0.34} color="#1a2e20" anchorX="center" anchorY="middle">
+              <Text position={[entrada.backX, 2.4, entrada.backZ + 0.4]} fontSize={0.34} color="#000000" anchorX="center" anchorY="middle">
                 Parte trasera
               </Text>
               {/* Letrero del sobrecimiento de piedra: tabla de madera en los cuatro frentes */}
