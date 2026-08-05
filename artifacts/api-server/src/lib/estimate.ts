@@ -80,6 +80,7 @@ export function computeItems(
   areas: Areas,
 ): RawEstimateItem[] {
   const {
+    floorAreaM2: floor,
     wallAreaM2: wall,
     roofAreaM2: roof,
     upperFloorAreaM2: upper,
@@ -368,6 +369,18 @@ export function computeItems(
     wall * 0.08,
     "bulto",
     `Revoque y pintura de cal: 0.08 bultos por m2 de muro (${wall} m2 x 0.08)`,
+  );
+
+  // Mano de obra de construccion (levantar muros, armar techos, revoques,
+  // etc.). No incluye la fabricacion de adobes, que va aparte. Regla acordada:
+  // minimo 5 meses de trabajo de una cuadrilla de 2 personas (~26 dias/mes).
+  const jornadasObra = Math.max(130, Math.ceil(floor * 1.9));
+  add(
+    "Jornada construccion (2 personas)",
+    "otros",
+    jornadasObra,
+    "dia",
+    `Mano de obra de la construccion (levantar paredes, techos, revoques, etc.): minimo 5 meses x 26 dias = 130 jornadas de 2 personas. Para esta casa de ${round(floor, 1)} m2 se estiman ${jornadasObra} jornadas. No incluye la fabricacion de adobes (va aparte).`,
   );
 
   // Merge duplicate material lines (e.g. guadua appears in several sections)
