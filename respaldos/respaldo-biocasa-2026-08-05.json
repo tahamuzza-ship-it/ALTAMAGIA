@@ -1,0 +1,407 @@
+{
+ "projects": [
+  {
+   "id": 1,
+   "name": "Casa Modelo Bahareque",
+   "description": "Casa de un piso en bahareque encementado con estructura de guadua.",
+   "location": "Eje Cafetero, Colombia",
+   "wall_system": "bahareque",
+   "roof_type": "teja_barro",
+   "status": "diseno",
+   "notes": "Proyecto de ejemplo para explorar la app.",
+   "terrain_access": null,
+   "terrain_slope": "pendiente_suave",
+   "water_distance_m": null,
+   "can_stay": true,
+   "can_cook": null,
+   "num_people": 4,
+   "target_months": null,
+   "reference_links": [
+    "https://www.facebook.com/100082295735887/posts/1059294516823730/"
+   ],
+   "created_at": "2026-08-02T19:55:17.264904+00:00",
+   "owner": null
+  },
+  {
+   "id": 2,
+   "name": "Casa Mixta con Altillo",
+   "description": "Casa de dos pisos: cocina, 2 banos, 2 habitaciones y sala con chimenea. Zocalo de adobe hasta 1.20 m, bahareque y ventanas arriba. El segundo piso es un altillo para reducir costos.",
+   "location": "Por definir",
+   "wall_system": "adobe",
+   "roof_type": "teja_barro",
+   "status": "diseno",
+   "notes": "Idea original del cliente: mixta en adobe hasta 1.20 m y tecnica de bahareque arriba.",
+   "terrain_access": null,
+   "terrain_slope": null,
+   "water_distance_m": null,
+   "can_stay": null,
+   "can_cook": null,
+   "num_people": 4,
+   "target_months": null,
+   "reference_links": [
+    "https://www.facebook.com/100082295735887/posts/1059294516823730/",
+    "https://bjktimjz.manus.space",
+    "https://photos.app.goo.gl/pASJv9qLERACjgKz6"
+   ],
+   "created_at": "2026-08-02T19:55:18.454082+00:00",
+   "owner": null
+  },
+  {
+   "id": 3,
+   "name": "Casa 3 - Bahareque y Adobe",
+   "description": null,
+   "location": "",
+   "wall_system": "mixta",
+   "roof_type": "teja_eternit",
+   "status": "diseno",
+   "notes": null,
+   "terrain_access": null,
+   "terrain_slope": null,
+   "water_distance_m": null,
+   "can_stay": null,
+   "can_cook": null,
+   "num_people": null,
+   "target_months": null,
+   "reference_links": null,
+   "created_at": "2026-08-05T21:46:33.191594+00:00",
+   "owner": null
+  }
+ ],
+ "rooms": [
+  {
+   "id": 1,
+   "project_id": 1,
+   "name": "Sala principal",
+   "kind": "sala",
+   "floor": 1,
+   "width_m": 4,
+   "length_m": 5,
+   "height_m": 2.6,
+   "pos_x": 0,
+   "pos_y": 0
+  },
+  {
+   "id": 2,
+   "project_id": 1,
+   "name": "Cocina",
+   "kind": "cocina",
+   "floor": 1,
+   "width_m": 3,
+   "length_m": 4,
+   "height_m": 2.6,
+   "pos_x": 4,
+   "pos_y": 0
+  },
+  {
+   "id": 3,
+   "project_id": 1,
+   "name": "Habitacion 1",
+   "kind": "habitacion",
+   "floor": 1,
+   "width_m": 3.5,
+   "length_m": 4,
+   "height_m": 2.6,
+   "pos_x": 0,
+   "pos_y": 5
+  },
+  {
+   "id": 4,
+   "project_id": 2,
+   "name": "Sala con chimenea",
+   "kind": "sala",
+   "floor": 1,
+   "width_m": 4,
+   "length_m": 4.5,
+   "height_m": 2.6,
+   "pos_x": 0,
+   "pos_y": 0
+  },
+  {
+   "id": 5,
+   "project_id": 2,
+   "name": "Cocina",
+   "kind": "cocina",
+   "floor": 1,
+   "width_m": 3,
+   "length_m": 3,
+   "height_m": 2.6,
+   "pos_x": 4,
+   "pos_y": 0
+  },
+  {
+   "id": 6,
+   "project_id": 2,
+   "name": "Bano social",
+   "kind": "bano",
+   "floor": 1,
+   "width_m": 2,
+   "length_m": 2,
+   "height_m": 2.6,
+   "pos_x": 4,
+   "pos_y": 3
+  },
+  {
+   "id": 7,
+   "project_id": 2,
+   "name": "Habitacion principal",
+   "kind": "habitacion",
+   "floor": 1,
+   "width_m": 3.5,
+   "length_m": 3.5,
+   "height_m": 2.6,
+   "pos_x": 0,
+   "pos_y": 4.5
+  },
+  {
+   "id": 8,
+   "project_id": 2,
+   "name": "Habitacion 2",
+   "kind": "habitacion",
+   "floor": 1,
+   "width_m": 3,
+   "length_m": 3.5,
+   "height_m": 2.6,
+   "pos_x": 3.5,
+   "pos_y": 5
+  },
+  {
+   "id": 9,
+   "project_id": 2,
+   "name": "Bano privado",
+   "kind": "bano",
+   "floor": 1,
+   "width_m": 2.5,
+   "length_m": 2,
+   "height_m": 2.6,
+   "pos_x": 0,
+   "pos_y": 8
+  },
+  {
+   "id": 10,
+   "project_id": 2,
+   "name": "Altillo",
+   "kind": "otro",
+   "floor": 2,
+   "width_m": 4,
+   "length_m": 5,
+   "height_m": 2.2,
+   "pos_x": 0,
+   "pos_y": 0
+  },
+  {
+   "id": 11,
+   "project_id": 3,
+   "name": "Alcoba 1",
+   "kind": "habitacion",
+   "floor": 1,
+   "width_m": 6,
+   "length_m": 3,
+   "height_m": 2.5,
+   "pos_x": 4,
+   "pos_y": 0
+  },
+  {
+   "id": 12,
+   "project_id": 3,
+   "name": "Alcoba 2",
+   "kind": "habitacion",
+   "floor": 1,
+   "width_m": 6,
+   "length_m": 2,
+   "height_m": 2.5,
+   "pos_x": 4,
+   "pos_y": 3
+  },
+  {
+   "id": 13,
+   "project_id": 3,
+   "name": "Patio de ropas",
+   "kind": "otro",
+   "floor": 1,
+   "width_m": 10,
+   "length_m": 2,
+   "height_m": 2.5,
+   "pos_x": 0,
+   "pos_y": 5
+  },
+  {
+   "id": 14,
+   "project_id": 3,
+   "name": "Entrada",
+   "kind": "corredor",
+   "floor": 1,
+   "width_m": 1,
+   "length_m": 5,
+   "height_m": 2.5,
+   "pos_x": 3,
+   "pos_y": 0
+  },
+  {
+   "id": 15,
+   "project_id": 3,
+   "name": "Cocina",
+   "kind": "cocina",
+   "floor": 1,
+   "width_m": 3,
+   "length_m": 3,
+   "height_m": 2.5,
+   "pos_x": 0,
+   "pos_y": 0
+  },
+  {
+   "id": 16,
+   "project_id": 3,
+   "name": "Baño",
+   "kind": "bano",
+   "floor": 1,
+   "width_m": 2,
+   "length_m": 2,
+   "height_m": 2.5,
+   "pos_x": 0,
+   "pos_y": 3
+  }
+ ],
+ "materials": [
+  {
+   "id": 1,
+   "name": "Cal hidratada",
+   "unit": "bulto",
+   "unit_price": 29000,
+   "category": "acabados"
+  },
+  {
+   "id": 2,
+   "name": "Lamina de zinc",
+   "unit": "unidad",
+   "unit_price": 42000,
+   "category": "cubierta"
+  },
+  {
+   "id": 3,
+   "name": "Membrana impermeable",
+   "unit": "m2",
+   "unit_price": 22000,
+   "category": "cubierta"
+  },
+  {
+   "id": 4,
+   "name": "Palma seca",
+   "unit": "m2",
+   "unit_price": 15000,
+   "category": "cubierta"
+  },
+  {
+   "id": 5,
+   "name": "Sustrato techo verde",
+   "unit": "m3",
+   "unit_price": 65000,
+   "category": "cubierta"
+  },
+  {
+   "id": 6,
+   "name": "Teja de barro",
+   "unit": "unidad",
+   "unit_price": 2900,
+   "category": "cubierta"
+  },
+  {
+   "id": 7,
+   "name": "Alambre y clavos",
+   "unit": "kg",
+   "unit_price": 9000,
+   "category": "estructura"
+  },
+  {
+   "id": 8,
+   "name": "Guadua estructural 6 m",
+   "unit": "unidad",
+   "unit_price": 18000,
+   "category": "estructura"
+  },
+  {
+   "id": 9,
+   "name": "Madera aserrada 4 m",
+   "unit": "unidad",
+   "unit_price": 28000,
+   "category": "estructura"
+  },
+  {
+   "id": 10,
+   "name": "Madera aserrada 5 m",
+   "unit": "unidad",
+   "unit_price": 36000,
+   "category": "estructura"
+  },
+  {
+   "id": 11,
+   "name": "Madera aserrada 6 m",
+   "unit": "unidad",
+   "unit_price": 45000,
+   "category": "estructura"
+  },
+  {
+   "id": 12,
+   "name": "Piedra para cimiento",
+   "unit": "m3",
+   "unit_price": 95000,
+   "category": "estructura"
+  },
+  {
+   "id": 13,
+   "name": "Adobe grande (hecho en obra)",
+   "unit": "unidad",
+   "unit_price": 0,
+   "category": "muros"
+  },
+  {
+   "id": 14,
+   "name": "Arena",
+   "unit": "m3",
+   "unit_price": 75000,
+   "category": "muros"
+  },
+  {
+   "id": 15,
+   "name": "Esterilla de guadua",
+   "unit": "m2",
+   "unit_price": 9500,
+   "category": "muros"
+  },
+  {
+   "id": 16,
+   "name": "Fibra vegetal (paja)",
+   "unit": "kg",
+   "unit_price": 3000,
+   "category": "muros"
+  },
+  {
+   "id": 17,
+   "name": "Tierra arcillosa",
+   "unit": "m3",
+   "unit_price": 45000,
+   "category": "muros"
+  },
+  {
+   "id": 18,
+   "name": "Jornada fabricacion de adobes (2 personas)",
+   "unit": "dia",
+   "unit_price": 140000,
+   "category": "otros"
+  },
+  {
+   "id": 19,
+   "name": "Teja eternit",
+   "unit": "unidad",
+   "unit_price": 48000,
+   "category": "cubierta"
+  },
+  {
+   "id": 20,
+   "name": "Jornada construccion (2 personas)",
+   "unit": "dia",
+   "unit_price": 140000,
+   "category": "otros"
+  }
+ ],
+ "installations": []
+}
