@@ -315,22 +315,29 @@ function PlanViewer({ rooms, selectedFloor, onRoomClick, onRoomDrop, installatio
               {(() => {
                 // Letra que quepa dentro del espacio: se achica en espacios angostos
                 // y en corredores va todo en una sola línea para que no se encimen.
-                const fs = Math.max(0.24, Math.min(0.4, r.lengthM * 0.28, (r.widthM * 1.4) / Math.max(6, r.name.length)));
                 const small = r.lengthM < 2 || r.widthM < 2;
                 if (small) {
+                  // Espacio angosto: una sola línea que QUEPA adentro.
+                  // Si es más largo que ancho (corredor vertical), se rota 90°.
+                  const label = `${r.name} · ${r.widthM}×${r.lengthM}m`;
+                  const vertical = r.lengthM > r.widthM * 1.4;
+                  const avail = (vertical ? r.lengthM : r.widthM) - 0.3;
+                  const fsFit = Math.max(0.18, Math.min(0.38, avail / (label.length * 0.58), (vertical ? r.widthM : r.lengthM) * 0.5));
                   return (
                     <text
                       x={r.widthM / 2}
                       y={r.lengthM / 2}
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      fontSize={fs}
+                      fontSize={fsFit}
+                      transform={vertical ? `rotate(90 ${r.widthM / 2} ${r.lengthM / 2})` : undefined}
                       className="font-sans fill-foreground font-medium pointer-events-none select-none"
                     >
-                      {r.name} · {r.widthM}×{r.lengthM}m
+                      {label}
                     </text>
                   );
                 }
+                const fs = Math.max(0.24, Math.min(0.4, r.lengthM * 0.28, (r.widthM * 1.4) / Math.max(6, r.name.length)));
                 return (
                   <>
                     <text
