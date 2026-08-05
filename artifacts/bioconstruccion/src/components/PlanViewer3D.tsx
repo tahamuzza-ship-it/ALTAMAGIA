@@ -501,7 +501,7 @@ function Room3D({ room, maxH1, maxH2 = 0, wallSystem, stairHole }: { room: Room,
   );
 }
 
-function Roof({ rooms, maxH1, maxH2, roofType, crossed = false }: { rooms: Room[], maxH1: number, maxH2: number, roofType: string, crossed?: boolean }) {
+function Roof({ rooms, maxH1, maxH2, roofType, crossed = false, ridge = 'auto' }: { rooms: Room[], maxH1: number, maxH2: number, roofType: string, crossed?: boolean, ridge?: 'auto' | 'frontal' | 'horizontal' }) {
   if (!rooms.length) return null;
 
   const f1Rooms = rooms.filter(r => r.floor === 1);
@@ -526,12 +526,15 @@ function Roof({ rooms, maxH1, maxH2, roofType, crossed = false }: { rooms: Room[
   const totalH = maxH1;
   const roofCol = roofColors[roofType] || roofColors.teja_barro;
 
-  const isXLonger = w >= l;
+  // 'horizontal': cumbrera paralela a la fachada (culatas a los lados)
+  // 'frontal': la culata (triángulo) da al frente, cumbrera de frente hacia atrás
+  const isXLonger = ridge === 'horizontal' ? true : ridge === 'frontal' ? false : w >= l;
   const roofLen = isXLonger ? w : l;
   const roofSpan = isXLonger ? l : w;
   // Pendiente: mínimo 30°, la necesaria para que el altillo quepa bajo la cumbrera,
   // y además que la baranda del altillo (≈1.15 m) libre el techo en sus bordes.
-  let angle = Math.PI / 6;
+  // Pendiente del techo: 32° (caballete a 32 grados)
+  let angle = (32 * Math.PI) / 180;
   const f2Rooms = rooms.filter(r => r.floor === 2);
   if (maxH2 > 0 && f2Rooms.length) {
     angle = Math.max(angle, Math.atan((maxH2 + 0.4) / (roofSpan / 2)));
@@ -999,6 +1002,7 @@ function Installations3D({ installations, maxH1 }: { installations: Installation
 export default function PlanViewer3DScene({ rooms, wallSystem, roofType, installations = [] }: { rooms: Room[], wallSystem: string, roofType: string, installations?: Installation[] }) {
   const [walkMode, setWalkMode] = useState(false);
   const [roofMode, setRoofMode] = useState<'cerrado' | 'cruzado' | 'abierto'>('cerrado');
+  const [roofRidge, setRoofRidge] = useState<'frontal' | 'horizontal'>('horizontal');
   const [showInfo, setShowInfo] = useState(false);
   const [walkFloorState, setWalkFloor] = useState(1);
   const [spawn, setSpawn] = useState<[number, number] | null>(null);
@@ -1153,7 +1157,7 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType, install
             </>
           )}
           {/* En el recorrido se quita el techo para ver la casa por dentro desde arriba */}
-          {!walkMode && roofMode !== 'abierto' && <Roof rooms={placedRooms} maxH1={maxH1} maxH2={maxH2} roofType={roofType} crossed={roofMode === 'cruzado'} />}
+          {!walkMode && roofMode !== 'abierto' && <Roof rooms={placedRooms} maxH1={maxH1} maxH2={maxH2} roofType={roofType} crossed={roofMode === 'cruzado'} ridge={roofRidge} />}
         </group>
 
         {walkMode ? (
@@ -1184,6 +1188,17 @@ export default function PlanViewer3DScene({ rooms, wallSystem, roofType, install
               Sin techo
             </Button>
           </div>
+          {roofMode !== 'abierto' && (
+            <div className="flex items-center gap-1 bg-background/90 rounded-lg px-2 py-1 shadow-md">
+              <span className="text-[11px] font-bold text-muted-foreground mr-1">CUMBRERA:</span>
+              <Button size="sm" variant={roofRidge === 'frontal' ? 'default' : 'secondary'} onClick={() => setRoofRidge('frontal')}>
+                Frontal (dos aguas)
+              </Button>
+              <Button size="sm" variant={roofRidge === 'horizontal' ? 'default' : 'secondary'} onClick={() => setRoofRidge('horizontal')}>
+                Horizontal
+              </Button>
+            </div>
+          )}
           <Button size="sm" variant="secondary" onClick={() => setShowInfo(v => !v)} className="shadow-md">
             <Info className="w-4 h-4 mr-1.5" /> ¿Por qué así?
           </Button>
