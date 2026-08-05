@@ -24,7 +24,7 @@ type Props = {
 };
 
 export function TechnicalPlan({ project, rooms, floor, onSaveOwner }: Props) {
-  const [scaleDen, setScaleDen] = useState<50 | 100>(50);
+  const scaleDen = 50; // Escala fija del plano: 1:50
   const [owner, setOwner] = useState(project.owner ?? "");
   useEffect(() => { setOwner(project.owner ?? ""); }, [project.owner]);
 
@@ -91,13 +91,8 @@ export function TechnicalPlan({ project, rooms, floor, onSaveOwner }: Props) {
     <div>
       {/* Controles (no salen en la impresión) */}
       <div className="flex flex-wrap items-center gap-2 p-3 border-b bg-muted/30 print:hidden">
-        <div className="flex bg-background border rounded-lg p-1">
-          {[50, 100].map(s => (
-            <Button key={s} variant={scaleDen === s ? "secondary" : "ghost"} size="sm"
-              className="h-7 text-xs px-3" onClick={() => setScaleDen(s as 50 | 100)}>
-              Escala 1:{s}
-            </Button>
-          ))}
+        <div className="flex bg-background border rounded-lg p-1 items-center px-3">
+          <span className="text-xs font-bold">Escala 1:50</span>
         </div>
         <div className="flex items-center gap-1">
           <Input value={owner} onChange={e => setOwner(e.target.value)} placeholder="Propietario (para el rótulo)"
