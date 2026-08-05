@@ -1033,6 +1033,7 @@ export default function ProjectDetail() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="teja_barro">Teja de Barro</SelectItem>
+                  <SelectItem value="teja_eternit">Teja Eternit</SelectItem>
                   <SelectItem value="palma">Palma</SelectItem>
                   <SelectItem value="zinc">Zinc</SelectItem>
                   <SelectItem value="techo_verde">Techo Verde</SelectItem>

@@ -11,6 +11,7 @@ export type ProjectInputRoofType = typeof ProjectInputRoofType[keyof typeof Proj
 
 export const ProjectInputRoofType = {
   teja_barro: 'teja_barro',
+  teja_eternit: 'teja_eternit',
   palma: 'palma',
   zinc: 'zinc',
   techo_verde: 'techo_verde',

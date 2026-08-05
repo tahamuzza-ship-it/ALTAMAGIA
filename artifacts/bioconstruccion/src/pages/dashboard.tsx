@@ -22,7 +22,7 @@ const projectSchema = z.object({
   description: z.string().optional(),
   location: z.string().optional(),
   wallSystem: z.enum(["bahareque", "tapia_pisada", "adobe", "guadua_vista"]),
-  roofType: z.enum(["teja_barro", "palma", "zinc", "techo_verde"]),
+  roofType: z.enum(["teja_barro", "teja_eternit", "palma", "zinc", "techo_verde"]),
 });
 
 export default function Dashboard() {
@@ -194,6 +194,7 @@ export default function Dashboard() {
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="teja_barro">Teja de Barro</SelectItem>
+                            <SelectItem value="teja_eternit">Teja Eternit</SelectItem>
                             <SelectItem value="palma">Palma</SelectItem>
                             <SelectItem value="zinc">Zinc</SelectItem>
                             <SelectItem value="techo_verde">Techo Verde</SelectItem>

@@ -317,6 +317,15 @@ export function computeItems(
     `Estructura de cubierta: 0.35 guaduas por m2 de techo (${roof} m2 x 0.35)`,
   );
   switch (roofType) {
+    case "teja_eternit":
+      add(
+        "Teja eternit",
+        "cubierta",
+        Math.ceil(roof * 0.65),
+        "unidad",
+        `Teja de fibrocemento de ~1.83 m (rinde ~1.55 m2 utiles con traslapos): 0.65 tejas por m2 de techo (${roof} m2 x 0.65)`,
+      );
+      break;
     case "teja_barro":
       add(
         "Teja de barro",

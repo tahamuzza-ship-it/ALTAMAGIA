@@ -433,7 +433,7 @@ components:
           description: Wall construction system
         roofType:
           type: string
-          enum: [teja_barro, palma, zinc, techo_verde]
+          enum: [teja_barro, teja_eternit, palma, zinc, techo_verde]
         status:
           type: string
           enum: [diseno, cotizado, construccion, terminado]
@@ -468,7 +468,7 @@ components:
           enum: [bahareque, tapia_pisada, adobe, guadua_vista, mixta]
         roofType:
           type: string
-          enum: [teja_barro, palma, zinc, techo_verde]
+          enum: [teja_barro, teja_eternit, palma, zinc, techo_verde]
         status:
           type: string
           enum: [diseno, cotizado, construccion, terminado]
@@ -500,7 +500,7 @@ components:
           enum: [bahareque, tapia_pisada, adobe, guadua_vista, mixta]
         roofType:
           type: string
-          enum: [teja_barro, palma, zinc, techo_verde]
+          enum: [teja_barro, teja_eternit, palma, zinc, techo_verde]
         status:
           type: string
           enum: [diseno, cotizado, construccion, terminado]

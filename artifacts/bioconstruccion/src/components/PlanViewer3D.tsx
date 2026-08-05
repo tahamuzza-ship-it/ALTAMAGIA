@@ -63,6 +63,7 @@ const wallColors: Record<string, string> = {
 
 const roofColors: Record<string, string> = {
   teja_barro: '#c96440',
+  teja_eternit: '#9aa0a6',
   palma: '#d4be83',
   zinc: '#9aa0a6',
   techo_verde: '#5c8a45'
