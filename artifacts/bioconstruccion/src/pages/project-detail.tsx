@@ -302,13 +302,16 @@ function PlanViewer({ rooms, selectedFloor, onRoomClick, onRoomDrop, installatio
                 height={r.lengthM} 
                 className="fill-background stroke-primary/40 stroke-[0.1] hover:stroke-primary hover:fill-primary/5 transition-colors"
                 rx={0.1}
+                strokeDasharray={r.kind === 'corredor' ? '0.35 0.25' : undefined}
               />
-              <rect 
-                x={0.1} y={0.1} 
-                width={r.widthM - 0.2} 
-                height={r.lengthM - 0.2} 
-                className="fill-transparent stroke-muted/30 stroke-[0.05]"
-              />
+              {r.kind !== 'corredor' && (
+                <rect 
+                  x={0.1} y={0.1} 
+                  width={r.widthM - 0.2} 
+                  height={r.lengthM - 0.2} 
+                  className="fill-transparent stroke-muted/30 stroke-[0.05]"
+                />
+              )}
               <text 
                 x={r.widthM / 2} 
                 y={r.lengthM / 2} 

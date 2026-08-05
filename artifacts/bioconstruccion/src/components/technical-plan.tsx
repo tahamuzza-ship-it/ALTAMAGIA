@@ -131,7 +131,7 @@ export function TechnicalPlan({ project, rooms, floor, onSaveOwner }: Props) {
             const laneV = 0.45 + (i % 2) * 0.4;
             return (
             <g key={room.id}>
-              <rect x={x} y={y} width={w} height={l} fill="none" stroke="#000" strokeWidth={WALL} />
+              <rect x={x} y={y} width={w} height={l} fill="none" stroke="#000" strokeWidth={room.kind === 'corredor' ? WALL * 0.4 : WALL} strokeDasharray={room.kind === 'corredor' ? '0.3 0.2' : undefined} />
               <text x={x + w / 2} y={y + l / 2 - 0.25} fontSize={0.38} fontWeight="bold" textAnchor="middle" fill="#000">
                 {KIND_LABELS[room.kind] ?? room.kind.toUpperCase()}
               </text>

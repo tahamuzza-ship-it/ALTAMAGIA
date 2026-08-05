@@ -470,11 +470,16 @@ function Room3D({ room, maxH1, maxH2 = 0, wallSystem, stairHole }: { room: Room,
         </mesh>
       ))}
       
-      {/* Walls — cada pared tiene su vano de puerta visible */}
-      <WallWithDoor axis="x" cx={x} cz={z - l / 2 + t / 2} span={w} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} texBot={texBot} texTop={texTop} withWindows={w > 2.4} />
-      <WallWithDoor axis="x" cx={x} cz={z + l / 2 - t / 2} span={w} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} texBot={texBot} texTop={texTop} withWindows={w > 2.4} />
-      <WallWithDoor axis="z" cx={x - w / 2 + t / 2} cz={z} span={l} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} texBot={texBot} texTop={texTop} withWindows={l > 2.4} />
-      <WallWithDoor axis="z" cx={x + w / 2 - t / 2} cz={z} span={l} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} texBot={texBot} texTop={texTop} withWindows={l > 2.4} />
+      {/* Walls — cada pared tiene su vano de puerta visible.
+          Los corredores son ABIERTOS: sin muros, solo piso, columnas y techo. */}
+      {room.kind !== 'corredor' && (
+        <>
+          <WallWithDoor axis="x" cx={x} cz={z - l / 2 + t / 2} span={w} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} texBot={texBot} texTop={texTop} withWindows={w > 2.4} />
+          <WallWithDoor axis="x" cx={x} cz={z + l / 2 - t / 2} span={w} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} texBot={texBot} texTop={texTop} withWindows={w > 2.4} />
+          <WallWithDoor axis="z" cx={x - w / 2 + t / 2} cz={z} span={l} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} texBot={texBot} texTop={texTop} withWindows={l > 2.4} />
+          <WallWithDoor axis="z" cx={x + w / 2 - t / 2} cz={z} span={l} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} texBot={texBot} texTop={texTop} withWindows={l > 2.4} />
+        </>
+      )}
 
       {/* Label */}
       <Text 
@@ -620,6 +625,8 @@ function buildCollisionBoxes(rooms: Room[], floor: number, stairHole?: HoleRect)
   }
 
   rooms.filter(r => r.floor === floor).forEach(room => {
+    // Corredores abiertos: sin muros, se camina libre
+    if (floor === 1 && room.kind === 'corredor') return;
     const w = room.widthM;
     const l = room.lengthM;
     const x0 = room.posX ?? 0;
