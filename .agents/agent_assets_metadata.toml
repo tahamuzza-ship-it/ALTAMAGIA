@@ -7,3 +7,10 @@ uri = "file://attached_assets/Manual-BioCasa.pdf"
 type = "pdf"
 title = "Manual de Usuario de BioCasa"
 description = "Manual descargable en PDF: cómo crear proyectos, dibujar planos, instalaciones, vista 3D, plano técnico y cotizaciones."
+
+[[outputs]]
+id = "c5Jn97b5d_3MeSCD7CCKi"
+uri = "file://respaldos/respaldo-biocasa-2026-08-05.json"
+type = "unspecified"
+title = "Respaldo BioCasa — 5 agosto 2026"
+description = "Copia de seguridad de tus 3 casas: 16 espacios, 20 materiales."
