@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Text, Sky } from '@react-three/drei';
-import { plasterTexture, tileTexture, grassTexture } from './textures3d';
+import { plasterTexture, tileTexture, grassTexture, photoTexture } from './textures3d';
+import type { Texture } from 'three';
 import Scenery3D from './Scenery3D';
 import { Room, Installation } from '@workspace/api-client-react';
 import { Vector3, BufferGeometry, BufferAttribute, DoubleSide } from 'three';
@@ -37,9 +38,10 @@ const DOOR_H = 2.05; // door opening height
  * Renders: two side segments (with color bands for mixta), a lintel above
  * the door, guadua door-frame posts, and optional windows.
  */
-function WallWithDoor({ axis, cx, cz, span, baseZ, h, hBot, cBot, cTop, withWindows }: {
+function WallWithDoor({ axis, cx, cz, span, baseZ, h, hBot, cBot, cTop, withWindows, texBot, texTop }: {
   axis: 'x' | 'z', cx: number, cz: number, span: number, baseZ: number,
   h: number, hBot: number, cBot: string, cTop: string, withWindows: boolean,
+  texBot?: Texture, texTop?: Texture,
 }) {
   const t = WALL_T;
   const gap = Math.min(DOOR_WIDTH, span * 0.5);
@@ -49,8 +51,8 @@ function WallWithDoor({ axis, cx, cz, span, baseZ, h, hBot, cBot, cTop, withWind
   const offs = [-(gap + seg) / 2, (gap + seg) / 2];
   const hTop = h - hBot;
   const bands = [
-    { y: baseZ + hBot / 2, hgt: hBot, c: cBot },
-    ...(hTop > 0.01 ? [{ y: baseZ + hBot + hTop / 2, hgt: hTop, c: cTop }] : []),
+    { y: baseZ + hBot / 2, hgt: hBot, c: texBot ? '#ffffff' : cBot, m: texBot ?? plasterTexture() },
+    ...(hTop > 0.01 ? [{ y: baseZ + hBot + hTop / 2, hgt: hTop, c: texTop ? '#ffffff' : cTop, m: texTop ?? plasterTexture() }] : []),
   ];
   const pos = (o: number): [number, number, number] =>
     axis === 'x' ? [cx + o, 0, cz] : [cx, 0, cz + o];
@@ -62,7 +64,7 @@ function WallWithDoor({ axis, cx, cz, span, baseZ, h, hBot, cBot, cTop, withWind
         bands.map((b, j) => (
           <mesh key={`${i}-${j}`} castShadow receiveShadow position={[pos(o)[0], b.y, pos(o)[2]]}>
             <boxGeometry args={dims(seg, b.hgt)} />
-            <meshStandardMaterial color={b.c} roughness={1} map={plasterTexture()} />
+            <meshStandardMaterial color={b.c} roughness={1} map={b.m} />
           </mesh>
         ))
       )}
@@ -116,7 +118,11 @@ function WallWithDoor({ axis, cx, cz, span, baseZ, h, hBot, cBot, cTop, withWind
       {h - doorH > 0.05 && (
         <mesh castShadow position={[cx, baseZ + doorH + (h - doorH) / 2, cz]}>
           <boxGeometry args={dims(gap, h - doorH)} />
-          <meshStandardMaterial color={doorH >= hBot ? cTop : cBot} roughness={1} map={plasterTexture()} />
+          <meshStandardMaterial
+            color={(doorH >= hBot ? texTop : texBot) ? '#ffffff' : (doorH >= hBot ? cTop : cBot)}
+            roughness={1}
+            map={(doorH >= hBot ? texTop : texBot) ?? plasterTexture()}
+          />
         </mesh>
       )}
       {/* Marco de guadua de la puerta */}
@@ -363,6 +369,10 @@ function Room3D({ room, maxH1, maxH2 = 0, wallSystem, stairHole }: { room: Room,
   const isMixta = wallSystem === 'mixta';
   const cTop = isMixta ? wallColors.bahareque : (wallColors[wallSystem] || wallColors.bahareque);
   const cBot = isMixta ? wallColors.adobe : cTop;
+  // Fotos reales de referencia: revoque naranja (bahareque) y tapia/adobe con capas
+  const photoFor = (sys: string) => photoTexture(sys === 'tapia_pisada' || sys === 'adobe' ? 'tapia.jpg' : 'bahareque.jpg');
+  const texTop = isMixta ? photoTexture('bahareque.jpg') : photoFor(wallSystem);
+  const texBot = isMixta ? photoTexture('tapia.jpg') : texTop;
 
   const hBot = isMixta ? Math.min(1.2, h) : h;
   const hTop = Math.max(0, h - hBot);
@@ -461,10 +471,10 @@ function Room3D({ room, maxH1, maxH2 = 0, wallSystem, stairHole }: { room: Room,
       ))}
       
       {/* Walls — cada pared tiene su vano de puerta visible */}
-      <WallWithDoor axis="x" cx={x} cz={z - l / 2 + t / 2} span={w} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} withWindows={w > 2.4} />
-      <WallWithDoor axis="x" cx={x} cz={z + l / 2 - t / 2} span={w} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} withWindows={w > 2.4} />
-      <WallWithDoor axis="z" cx={x - w / 2 + t / 2} cz={z} span={l} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} withWindows={l > 2.4} />
-      <WallWithDoor axis="z" cx={x + w / 2 - t / 2} cz={z} span={l} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} withWindows={l > 2.4} />
+      <WallWithDoor axis="x" cx={x} cz={z - l / 2 + t / 2} span={w} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} texBot={texBot} texTop={texTop} withWindows={w > 2.4} />
+      <WallWithDoor axis="x" cx={x} cz={z + l / 2 - t / 2} span={w} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} texBot={texBot} texTop={texTop} withWindows={w > 2.4} />
+      <WallWithDoor axis="z" cx={x - w / 2 + t / 2} cz={z} span={l} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} texBot={texBot} texTop={texTop} withWindows={l > 2.4} />
+      <WallWithDoor axis="z" cx={x + w / 2 - t / 2} cz={z} span={l} baseZ={baseZ} h={h} hBot={hBot} cBot={cBot} cTop={cTop} texBot={texBot} texTop={texTop} withWindows={l > 2.4} />
 
       {/* Label */}
       <Text 

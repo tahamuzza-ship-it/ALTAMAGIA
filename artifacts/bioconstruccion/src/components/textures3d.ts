@@ -1,7 +1,20 @@
 // Texturas procedurales livianas (canvas) para la vista 3D realista.
 // Son casi blancas en escala de grises: el color del material las tiñe,
 // así conservamos la paleta por sistema constructivo sin cargar imágenes.
-import { CanvasTexture, RepeatWrapping, SRGBColorSpace } from 'three';
+import { CanvasTexture, RepeatWrapping, MirroredRepeatWrapping, SRGBColorSpace, Texture, TextureLoader } from 'three';
+
+// Fotos reales (recortadas de las referencias del usuario) servidas desde public/textures
+const loader = new TextureLoader();
+const photoCache: Record<string, Texture> = {};
+export function photoTexture(name: string): Texture {
+  return (photoCache[name] ??= (() => {
+    const t = loader.load(`${import.meta.env.BASE_URL}textures/${name}`);
+    t.wrapS = t.wrapT = MirroredRepeatWrapping;
+    t.colorSpace = SRGBColorSpace;
+    t.anisotropy = 4;
+    return t;
+  })());
+}
 
 function makeTexture(size: number, draw: (ctx: CanvasRenderingContext2D, s: number) => void, repeat = 1): CanvasTexture {
   const c = document.createElement('canvas');
