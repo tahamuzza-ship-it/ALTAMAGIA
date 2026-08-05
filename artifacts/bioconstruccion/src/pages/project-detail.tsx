@@ -153,6 +153,7 @@ function PlanViewer({ rooms, selectedFloor, onRoomClick, onRoomDrop, installatio
   const svgRef = useRef<SVGSVGElement>(null);
   
   const [dragState, setDragState] = useState<{ roomId: number; offsetX: number; offsetY: number; x: number; y: number; moved: boolean } | null>(null);
+  const [zoom, setZoom] = useState(1);
 
   const floorRooms = rooms.filter(r => r.floor === selectedFloor);
   const floorInstallations = installations.filter(i => i.floor === selectedFloor);
@@ -276,9 +277,27 @@ function PlanViewer({ rooms, selectedFloor, onRoomClick, onRoomDrop, installatio
       {/* Background grid pattern */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, black 1px, transparent 0)', backgroundSize: '20px 20px' }}></div>
       
+      {/* Controles de zoom */}
+      <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5">
+        <button
+          onClick={() => setZoom(z => Math.min(4, z * 1.4))}
+          className="w-9 h-9 rounded-lg bg-background border shadow-sm text-lg font-bold hover:bg-accent"
+          aria-label="Acercar"
+        >+</button>
+        <button
+          onClick={() => setZoom(z => Math.max(0.5, z / 1.4))}
+          className="w-9 h-9 rounded-lg bg-background border shadow-sm text-lg font-bold hover:bg-accent"
+          aria-label="Alejar"
+        >−</button>
+        <button
+          onClick={() => setZoom(1)}
+          className="w-9 h-9 rounded-lg bg-background border shadow-sm text-[10px] font-bold hover:bg-accent"
+          aria-label="Tamaño normal"
+        >1:1</button>
+      </div>
       <svg 
         ref={svgRef}
-        viewBox={`${bounds.minX} ${bounds.minY} ${bounds.width} ${bounds.height}`}
+        viewBox={`${bounds.minX + bounds.width / 2 - bounds.width / zoom / 2} ${bounds.minY + bounds.height / 2 - bounds.height / zoom / 2} ${bounds.width / zoom} ${bounds.height / zoom}`}
         className={`w-full h-full max-h-[70vh] drop-shadow-sm touch-none ${activeTool ? "cursor-crosshair" : ""}`}
         preserveAspectRatio="xMidYMid meet"
         onClick={handleSvgClick}
@@ -331,7 +350,9 @@ function PlanViewer({ rooms, selectedFloor, onRoomClick, onRoomDrop, installatio
                       dominantBaseline="middle"
                       fontSize={fsFit}
                       transform={vertical ? `rotate(90 ${r.widthM / 2} ${r.lengthM / 2})` : undefined}
-                      className="font-sans fill-foreground font-medium pointer-events-none select-none"
+                      fill="#14281a"
+                      fontWeight={700}
+                      className="font-sans pointer-events-none select-none"
                     >
                       {label}
                     </text>
@@ -346,7 +367,9 @@ function PlanViewer({ rooms, selectedFloor, onRoomClick, onRoomDrop, installatio
                       textAnchor="middle"
                       dominantBaseline="middle"
                       fontSize={fs}
-                      className="font-sans fill-foreground font-medium pointer-events-none select-none"
+                      fill="#14281a"
+                      fontWeight={700}
+                      className="font-sans pointer-events-none select-none"
                     >
                       {r.name}
                     </text>
@@ -356,7 +379,9 @@ function PlanViewer({ rooms, selectedFloor, onRoomClick, onRoomDrop, installatio
                       textAnchor="middle"
                       dominantBaseline="middle"
                       fontSize={Math.max(0.2, fs * 0.65)}
-                      className="font-sans fill-muted-foreground pointer-events-none select-none"
+                      fill="#2f4a36"
+                      fontWeight={600}
+                      className="font-sans pointer-events-none select-none"
                     >
                       {r.widthM}m × {r.lengthM}m
                     </text>
